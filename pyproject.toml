@@ -28,6 +28,7 @@ repovil-tracking = "repovil.tracking:main"
 
 [dependency-groups]
 dev = [
+  "httpx2>=2,<3",
   "mypy>=1.14,<2",
   "pytest>=8.3,<10",
   "ruff>=0.9,<1",

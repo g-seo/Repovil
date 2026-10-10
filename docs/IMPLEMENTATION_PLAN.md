@@ -508,39 +508,45 @@ npm run build
 
 **선행 조건:** Phase 9
 
+**상태:** `[x]` — 2026-10-11 완료
+
 ### 구현 항목
 
-- [ ] `GET /rankings`에 period/category/page validation, 20개 pagination, PRD 정렬을 구현한다.
-- [ ] 마지막 `published_at`이 있는 run만 읽고 `tracking_run_id`, `calculated_at`, page 정보를 반환한다.
-- [ ] 공개 run이 없을 때 빈 ranking과 구분되는 명시적 데이터 준비 중 응답을 구현한다.
-- [ ] category 미지정을 `All`로 처리하고 DB에 `All` row를 만들지 않는다.
-- [ ] `GET /categories`가 활성 category를 `display_order` 순으로 모두 반환하며 결과 0건 category도 누락하지 않게 한다.
-- [ ] `GET /repositories/{owner}/{name}`에 현재 metadata와 GitHub link를 구현한다.
-- [ ] `GET /repositories/{owner}/{name}/star-history`에 최근 30일 실제 snapshot/bootstrap point와 점별 추정 여부를 구현한다.
-- [ ] 실제 snapshot과 bootstrap이 겹치면 실제 값을 우선하고 bootstrap을 실제값으로 표시하지 않는다.
-- [ ] `GET /health`는 process liveness, `GET /ready`는 DB 등 필수 의존성 readiness를 반환한다.
-- [ ] user-facing API가 GitHubClient 또는 외부 network를 호출하지 않음을 보장한다.
+- [x] `GET /rankings`에 period/category/page validation, 20개 pagination, PRD 정렬을 구현한다.
+- [x] 마지막 `published_at`이 있는 run만 읽고 `tracking_run_id`, `calculated_at`, page 정보를 반환한다.
+- [x] 공개 run이 없을 때 빈 ranking과 구분되는 명시적 데이터 준비 중 응답을 구현한다.
+- [x] category 미지정을 `All`로 처리하고 DB에 `All` row를 만들지 않는다.
+- [x] `GET /categories`가 활성 category를 `display_order` 순으로 모두 반환하며 결과 0건 category도 누락하지 않게 한다.
+- [x] `GET /repositories/{owner}/{name}`에 현재 metadata와 GitHub link를 구현한다.
+- [x] `GET /repositories/{owner}/{name}/star-history`에 최근 30일 실제 snapshot/bootstrap point와 점별 추정 여부를 구현한다.
+- [x] 실제 snapshot과 bootstrap이 겹치면 실제 값을 우선하고 bootstrap을 실제값으로 표시하지 않는다.
+- [x] `GET /health`는 process liveness, `GET /ready`는 DB 등 필수 의존성 readiness를 반환한다.
+- [x] user-facing API가 GitHubClient 또는 외부 network를 호출하지 않음을 보장한다.
 
 ### 완료 조건
 
-- [ ] 네 endpoint와 health/readiness가 PRD 응답 상태를 구분한다.
-- [ ] ranking page는 정확히 20개 단위이며 안정적인 정렬과 총 page 정보를 제공한다.
-- [ ] category filter가 multi-topic repository를 중복 반환하지 않는다.
-- [ ] API 데이터가 항상 공개 run/snapshot provenance를 유지한다.
+- [x] 네 endpoint와 health/readiness가 PRD 응답 상태를 구분한다.
+- [x] ranking page는 정확히 20개 단위이며 안정적인 정렬과 총 page 정보를 제공한다.
+- [x] category filter가 multi-topic repository를 중복 반환하지 않는다.
+- [x] API 데이터가 항상 공개 run/snapshot provenance를 유지한다.
 
 ### 테스트 방법
 
-- [ ] period/category/page 정상·오류 및 첫/중간/마지막/범위 밖 page 테스트를 실행한다.
-- [ ] published run 없음, 빈 결과, category 0건 테스트를 실행한다.
-- [ ] 동점 정렬과 category 중복 제거 integration test를 실행한다.
-- [ ] rename 후 현재 owner/name 상세 조회와 not-found 테스트를 실행한다.
-- [ ] 30일 경계, estimated/actual 혼합, actual 우선 history 테스트를 실행한다.
-- [ ] API 요청 중 outbound GitHub call이 0회인지 테스트한다.
-- [ ] DB 정상/비정상 readiness 테스트를 실행한다.
+- [x] period/category/page 정상·오류 및 첫/중간/마지막/범위 밖 page 테스트를 실행한다.
+- [x] published run 없음, 빈 결과, category 0건 테스트를 실행한다.
+- [x] 동점 정렬과 category 중복 제거 integration test를 실행한다.
+- [x] rename 후 현재 owner/name 상세 조회와 not-found 테스트를 실행한다.
+- [x] 30일 경계, estimated/actual 혼합, actual 우선 history 테스트를 실행한다.
+- [x] API 요청 중 outbound GitHub call이 0회인지 테스트한다.
+- [x] DB 정상/비정상 readiness 테스트를 실행한다.
 
 ### 실행 기록
 
-- 미실행
+- 2026-10-11: PostgreSQL 전용 FastAPI 읽기 API를 구현. 마지막 공개 run의 24h/7d/30d ranking, 활성 category 검증, 고정 20개 pagination, PRD 동점 정렬과 multi-topic 중복 제거를 제공하고 `preparing`과 ready 빈 결과를 구분.
+- 2026-10-11: 활성 category 전체 조회, 현재 repository metadata/rename 조회, 동일한 `repository_not_found` 404 계약, 최근 30일 actual/bootstrap history와 날짜 중첩 시 actual 우선 처리를 추가. health는 DB 비의존, readiness는 PostgreSQL 연결 상태를 반영.
+- 2026-10-11: API import graph에서 ranking/GitHubClient 의존성을 제거해 사용자 요청 경로가 외부 network 없이 DB만 읽도록 유지. HTTP 통합 테스트를 위해 현재 Starlette가 요구하는 `httpx2`를 개발 의존성으로 추가.
+- 2026-10-11: `TEST_DATABASE_URL=... uv run pytest` — 121 passed, live 1 skipped. `uv run ruff check .`, `uv run mypy`, `git diff --check` — 모두 통과.
+- 2026-10-11: Phase 10 완료. 요청에 따라 Phase 11은 시작하지 않음.
 
 ## Phase 11 — Next.js ranking 화면
 
