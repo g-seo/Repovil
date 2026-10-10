@@ -117,34 +117,36 @@ npm run build
 
 **선행 조건:** Phase 0
 
+**상태:** `[x]` — 2026-10-10 인증/비인증 live 검증 완료
+
 ### 구현 항목
 
-- [ ] 검증 일자, 사용한 REST API version, 인증 방식, test repository/topic, 요청/응답 요약을 `docs/GITHUB_API_VALIDATION.md`에 기록한다. token과 개인 정보는 기록하지 않는다.
-- [ ] `GET /search/repositories`가 `topic`, `stars`, public/non-fork/non-archived 조건과 정렬·pagination을 실제로 지원하는지 확인한다.
-- [ ] Search가 반환하는 `total_count`, `incomplete_results`, 최대 1,000개 접근 제한, `per_page`/page 한계를 확인한다.
-- [ ] star 범위의 양 끝이 포함되는지 확인하고, 인접 구간 중복 방지 규칙을 정한다.
-- [ ] 결과가 1,000개를 넘는 구간을 재귀 분할할 수 있는지 표본 topic으로 검증한다. 단일 star 값 구간도 1,000개를 넘으면 해당 구간을 실패로 기록해야 하며, PRD 승인 없이 다른 발견 방식을 추가하지 않는다.
-- [ ] repository 조회에서 `github_id`, owner/name, topics, visibility, fork, archived, current star 수를 얻을 수 있는지와 rename redirect, 404 동작을 확인한다.
-- [ ] `GET /repos/{owner}/{repo}/stargazers/count`와 `GET /repos/{owner}/{repo}/stargazers/history`의 가용성, public repository 권한, 응답 형식, pagination을 live 요청으로 확인한다.
-- [ ] star history의 주별 묶음, 일별 `stars_created`, 최신순 page, UTC와 일치하지 않을 수 있는 경계, 최대 `per_page=30`/`page=100` 제약을 확인한다.
-- [ ] star history가 생성된 star 수이며 unstar를 복원하지 못한다는 점을 fixture 기대값에 반영한다.
-- [ ] 인증/비인증 primary rate limit, Search 전용 limit, `x-ratelimit-*`, `Retry-After`, 403/429 및 secondary limit 처리 규칙을 확인한다.
-- [ ] 예상 repository 수를 표본 검색으로 산정하고 daily discovery, 신규 bootstrap, 6시간 tracking의 요청 예산이 운영 가능한지 계산한다.
-- [ ] PRD의 `GitHubClient` 메서드 각각을 검증된 REST endpoint에 매핑한다. REST로 구현하며 GraphQL 전환은 MVP에서 제외한다.
+- [x] 검증 일자, 사용한 REST API version, 인증 방식, test repository/topic, 요청/응답 요약을 `docs/GITHUB_API_VALIDATION.md`에 기록한다. token과 개인 정보는 기록하지 않는다.
+- [x] `GET /search/repositories`가 `topic`, `stars`, public/non-fork/non-archived 조건과 정렬·pagination을 실제로 지원하는지 확인한다.
+- [x] Search가 반환하는 `total_count`, `incomplete_results`, 최대 1,000개 접근 제한, `per_page`/page 한계를 확인한다.
+- [x] star 범위의 양 끝이 포함되는지 확인하고, 인접 구간 중복 방지 규칙을 정한다.
+- [x] 결과가 1,000개를 넘는 구간을 재귀 분할할 수 있는지 표본 topic으로 검증한다. 단일 star 값 구간도 1,000개를 넘으면 해당 구간을 실패로 기록해야 하며, PRD 승인 없이 다른 발견 방식을 추가하지 않는다.
+- [x] repository 조회에서 `github_id`, owner/name, topics, visibility, fork, archived, current star 수를 얻을 수 있는지와 rename redirect, 404 동작을 확인한다.
+- [x] `GET /repos/{owner}/{repo}/stargazers/count`와 `GET /repos/{owner}/{repo}/stargazers/history`의 가용성, public repository 권한, 응답 형식, pagination을 live 요청으로 확인한다.
+- [x] star history의 주별 묶음, 일별 `stars_created`, 최신순 page, UTC와 일치하지 않을 수 있는 경계, 최대 `per_page=30`/`page=100` 제약을 확인한다.
+- [x] star history가 생성된 star 수이며 unstar를 복원하지 못한다는 점을 fixture 기대값에 반영한다.
+- [x] 인증/비인증 primary rate limit, Search 전용 limit, `x-ratelimit-*`, `Retry-After`, 403/429 및 secondary limit 처리 규칙을 확인한다.
+- [x] 예상 repository 수를 표본 검색으로 산정하고 daily discovery, 신규 bootstrap, 6시간 tracking의 요청 예산이 운영 가능한지 계산한다.
+- [x] PRD의 `GitHubClient` 메서드 각각을 검증된 REST endpoint에 매핑한다. REST로 구현하며 GraphQL 전환은 MVP에서 제외한다.
 
 ### 완료 조건
 
-- [ ] Search 분할, metadata/status 조회, current star count, 30일 bootstrap에 필요한 데이터를 실제 API로 획득한 증거가 문서화된다.
-- [ ] endpoint별 권한·pagination·rate limit·실패 의미와 API version pinning 정책이 확정된다.
-- [ ] 요청 예산이 daily/6-hour schedule 안에서 가능한지 수치로 판단된다.
-- [ ] 실제 API가 PRD를 지원하지 않으면 Phase 2로 진행하지 않고 `[!]`로 표시한 뒤 PRD 변경 여부를 사용자에게 요청한다. scraping이나 비공식 API를 임의로 도입하지 않는다.
+- [x] Search 분할, metadata/status 조회, current star count, 30일 bootstrap에 필요한 데이터를 실제 API로 획득한 증거가 문서화된다.
+- [x] endpoint별 권한·pagination·rate limit·실패 의미와 API version pinning 정책이 확정된다.
+- [x] 요청 예산이 daily/6-hour schedule 안에서 가능한지 수치로 판단된다.
+- [x] 실제 API가 PRD를 지원함을 확인했다. scraping이나 비공식 API를 도입하지 않는다.
 
 ### 테스트 방법
 
-- [ ] 인증된 read-only token으로 소형·중형·대형 public repository에 read-only smoke request를 실행한다.
-- [ ] 1,000건 이하/초과 search query, 마지막 page, `incomplete_results`를 검증한다.
-- [ ] rate-limit response header와 404/422/403 또는 429 fixture를 보존 가능한 형태로 정리한다.
-- [ ] GitHub 공식 문서와 live 결과의 차이를 기록한다.
+- [x] 인증된 read-only token으로 소형·중형·대형 public repository에 read-only smoke request를 실행한다.
+- [x] 1,000건 이하/초과 search query, 마지막 page, `incomplete_results`를 검증한다.
+- [x] rate-limit response header와 404/422/403 또는 429 fixture를 보존 가능한 형태로 정리한다.
+- [x] GitHub 공식 문서와 live 결과의 차이를 기록한다.
 
 ### 공식 문서 기준선
 
@@ -154,7 +156,12 @@ npm run build
 
 ### 실행 기록
 
-- 미실행. 계획 작성 시 공식 문서만 검토했으며 live API 검증은 수행하지 않음.
+- 2026-10-10: `docs/GITHUB_API_VALIDATION.md` 작성. GitHub REST API `2026-03-10`을 기준으로 Search, repository metadata, aggregate star count/history, rename redirect, 404/422, pagination, rate-limit header를 public read-only live request로 검증.
+- 2026-10-10: `topic:ai` 4,131건 표본을 star 범위로 재귀 분할해 모든 leaf를 1,000건 이하로 만들 수 있음을 확인. star 범위는 inclusive이며 인접 구간은 `mid`/`mid+1`로 나눈다.
+- 2026-10-10: PRD 21개 topic의 eligible `total_count`를 측정. 중복 포함 상한 6,426개 기준 daily Search는 약 78회 이상, 6시간 tracking은 보수적 2-call 기준 최대 12,852회/약 2.57시간으로 산정해 운영 가능하다고 판단.
+- 2026-10-10: 유효한 `GITHUB_TOKEN`/`GH_TOKEN`이 없고 로컬 GitHub CLI credential도 무효하므로 인증 smoke test는 미실행. 유효한 read-only token으로 소형/중형/대형 요청과 인증 rate-limit header를 확인할 때까지 Phase 1은 `[!]`이며 Phase 2는 시작하지 않음.
+- 2026-10-10: read-only fine-grained token이 GitHub CLI credential store에 설정된 후 인증 smoke test 완료. Search 30/minute, core 5,000/hour를 live header로 확인하고 소형 `octocat/Hello-World`, 중형 `fastapi/fastapi`, 대형 `freeCodeCamp/freeCodeCamp`의 metadata/count/history가 모두 HTTP 200임을 확인. token은 출력·문서화하지 않음.
+- 2026-10-10: Phase 1 완료. 요청에 따라 Phase 2는 시작하지 않음.
 
 ## Phase 2 — 프로젝트 골격과 개발 품질 기준
 
