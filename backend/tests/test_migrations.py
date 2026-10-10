@@ -255,6 +255,21 @@ def test_key_unique_foreign_key_and_check_constraints(
         )
         _assert_integrity_error(
             connection,
+            "UPDATE repositories SET bootstrap_attempt_count = -1 WHERE id = %s",
+            (repository_id,),
+        )
+        _assert_integrity_error(
+            connection,
+            "UPDATE repositories SET bootstrap_retry_count = -1 WHERE id = %s",
+            (repository_id,),
+        )
+        _assert_integrity_error(
+            connection,
+            "UPDATE repositories SET bootstrap_response_status = 99 WHERE id = %s",
+            (repository_id,),
+        )
+        _assert_integrity_error(
+            connection,
             "UPDATE repositories SET status = 'tracking' WHERE id = %s",
             (repository_id,),
         )

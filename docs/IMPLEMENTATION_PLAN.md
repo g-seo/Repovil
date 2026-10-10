@@ -377,34 +377,40 @@ npm run build
 
 **선행 조건:** Phase 6
 
+**상태:** `[x]` — 2026-10-11 완료
+
 ### 구현 항목
 
-- [ ] 신규 eligible repository에 대해 `get_star_history`를 호출해 필요한 최근 구간의 일별 `stars_created`를 저장한다.
-- [ ] `(repository_id, date)` 기준 idempotent upsert와 `fetched_at` 기록을 구현한다.
-- [ ] 최신 실측 star count에서 일별 생성 수를 역산해 7d/30d baseline 후보를 계산한다.
-- [ ] API의 일 경계가 UTC와 정확히 일치하지 않음을 유지하고 결과를 항상 `is_estimated=true`로 표시할 수 있게 한다.
-- [ ] unstar를 복원하지 못하는 추정치임을 domain model과 API contract에 반영한다.
-- [ ] 음수 baseline, 누락/불연속 응답 등 유효하지 않은 추정치는 사용하지 않는다.
-- [ ] bootstrap은 24h baseline에 절대 사용하지 않는다.
-- [ ] bootstrap 성공 후 tracking을 활성화한다. 실패는 원인과 재시도 상태를 남기고 snapshot/ranking으로 위장하지 않는다.
+- [x] 신규 eligible repository에 대해 `get_star_history`를 호출해 필요한 최근 구간의 일별 `stars_created`를 저장한다.
+- [x] `(repository_id, date)` 기준 idempotent upsert와 `fetched_at` 기록을 구현한다.
+- [x] 최신 실측 star count에서 일별 생성 수를 역산해 7d/30d baseline 후보를 계산한다.
+- [x] API의 일 경계가 UTC와 정확히 일치하지 않음을 유지하고 결과를 항상 `is_estimated=true`로 표시할 수 있게 한다.
+- [x] unstar를 복원하지 못하는 추정치임을 domain model과 API contract에 반영한다.
+- [x] 음수 baseline, 누락/불연속 응답 등 유효하지 않은 추정치는 사용하지 않는다.
+- [x] bootstrap은 24h baseline에 절대 사용하지 않는다.
+- [x] bootstrap 성공 후 tracking을 활성화한다. 실패는 원인과 재시도 상태를 남기고 snapshot/ranking으로 위장하지 않는다.
 
 ### 완료 조건
 
-- [ ] 유효한 신규 repository가 7d/30d 추정 baseline 후보를 갖는다.
-- [ ] 원천 일별 데이터와 계산 결과를 분리해 재계산할 수 있다.
-- [ ] 자체 snapshot이 충분해지면 ranking이 자동으로 실제 baseline을 우선할 수 있다.
-- [ ] 잘못된 추정치가 ranking이나 graph에 포함되지 않는다.
+- [x] 유효한 신규 repository가 7d/30d 추정 baseline 후보를 갖는다.
+- [x] 원천 일별 데이터와 계산 결과를 분리해 재계산할 수 있다.
+- [x] 자체 snapshot이 충분해지면 ranking이 자동으로 실제 baseline을 우선할 수 있다.
+- [x] 잘못된 추정치가 ranking이나 graph에 포함되지 않는다.
 
 ### 테스트 방법
 
-- [ ] known daily counts에서 7d/30d baseline 역산 테스트를 실행한다.
-- [ ] unstar로 최신 count와 누적 생성 수가 어긋나는 fixture를 테스트한다.
-- [ ] 음수, 누락, page 경계, 중복 fetch, API 실패 테스트를 실행한다.
-- [ ] 24h 계산 경로가 bootstrap을 참조하지 않는 테스트를 실행한다.
+- [x] known daily counts에서 7d/30d baseline 역산 테스트를 실행한다.
+- [x] unstar로 최신 count와 누적 생성 수가 어긋나는 fixture를 테스트한다.
+- [x] 음수, 누락, page 경계, 중복 fetch, API 실패 테스트를 실행한다.
+- [x] 24h 계산 경로가 bootstrap을 참조하지 않는 테스트를 실행한다.
 
 ### 실행 기록
 
-- 미실행
+- 2026-10-11: `repovil-bootstrap` worker를 추가. `bootstrap_pending` repository의 최신 star count와 GitHub 주간 history를 수집해 최근 30일 일별 원천 row를 보존하고, 성공 시 tracking을 활성화하도록 구현.
+- 2026-10-11: 7d/30d 전용 추정 baseline domain model과 계산을 추가. provider 일 경계와 unstar 한계를 유지해 항상 `is_estimated=true`로 표시하며, 누락·불연속·음수 추정은 생성하지 않고 24h 요청은 명시적으로 거부.
+- 2026-10-11: bootstrap 시도/완료/실패와 request metadata를 기록하는 Alembic migration을 추가. API/응답 형식 실패는 `bootstrap_pending` 상태와 원인을 보존해 다음 실행에서 재시도하며, 원천 row 충돌 시 기존 값을 덮어쓰지 않음.
+- 2026-10-11: known counts, unstar 한계, 음수/누락, 주간 page 경계, 중복 fetch, API 실패 후 재시도, advisory lock 테스트 추가. `TEST_DATABASE_URL=... uv run pytest` — 76 passed, live 1 skipped.
+- 2026-10-11: migration `upgrade → downgrade → upgrade`, `uv run ruff check .`, `uv run mypy`, `git diff --check`, `repovil-bootstrap --help` — 모두 통과. Phase 7 완료, 요청에 따라 Phase 8은 시작하지 않음.
 
 ## Phase 8 — Tracking 및 snapshot worker
 

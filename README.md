@@ -21,8 +21,8 @@ uv run uvicorn repovil.api:app --reload
 npm --prefix frontend run dev
 ```
 
-The worker entry point is intentionally a no-op until the collection phases are
-implemented:
+The generic worker entry point is a configuration smoke check; collection jobs use
+dedicated commands:
 
 ```bash
 uv run repovil-worker
@@ -39,6 +39,13 @@ Apply the database migration and synchronize the validated category configuratio
 ```bash
 uv run alembic upgrade head
 uv run repovil-sync-categories
+```
+
+Run discovery and then bootstrap newly discovered repositories before tracking:
+
+```bash
+uv run repovil-discovery
+uv run repovil-bootstrap
 ```
 
 ## Quality checks
