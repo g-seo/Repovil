@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "AI OSS Momentum Tracker"
 requires-python = ">=3.12"
 dependencies = [
+  "alembic>=1.14,<2",
   "fastapi>=0.115,<1",
   "psycopg[binary]>=3.2,<4",
   "pydantic-settings>=2.7,<3",
@@ -20,6 +21,7 @@ repovil-api = "repovil.api:main"
 repovil-worker = "repovil.worker:main"
 repovil-db-check = "repovil.db:main"
 repovil-categories-check = "repovil.category_config:main"
+repovil-sync-categories = "repovil.category_sync:main"
 
 [dependency-groups]
 dev = [

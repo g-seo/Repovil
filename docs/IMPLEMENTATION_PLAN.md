@@ -249,35 +249,41 @@ npm run build
 
 **선행 조건:** Phase 3
 
+**상태:** `[x]` — 2026-10-11 완료
+
 ### 구현 항목
 
-- [ ] PRD 핵심 테이블 `repositories`, `topics`, `categories`, `category_topics`, `repository_topics`를 migration으로 만든다.
-- [ ] `discovery_runs`, `tracking_runs`, `star_snapshots`, `bootstrap_star_history`, `rankings`를 migration으로 만든다.
-- [ ] tracking 시작 시 대상 확정과 repository별 success/failed/skipped 기록을 위한 최소 run-item 테이블을 추가한다. `(tracking_run_id, repository_id)`를 unique하게 한다.
-- [ ] `github_id UNIQUE`, run/repository 및 bootstrap 복합 key, ranking 복합 PK, `scheduled_at UNIQUE`를 구현한다.
-- [ ] `star_snapshots(repository_id, captured_at DESC)`와 읽기 endpoint에 필요한 최소 index를 추가한다.
-- [ ] timestamp는 timezone-aware PostgreSQL type으로 저장하고 애플리케이션 경계에서 UTC를 강제한다.
-- [ ] star count와 run count가 음수가 되지 않도록 제약하고 period/status 값은 PRD 값만 허용한다.
-- [ ] discovery 실패 구간을 재시도 가능한 구조로 저장한다. MVP에는 JSONB 또는 단순 child table 중 실제 query에 필요한 더 단순한 방식을 선택한다.
-- [ ] Phase 3의 category seed/sync를 transaction으로 DB에 적용한다.
+- [x] PRD 핵심 테이블 `repositories`, `topics`, `categories`, `category_topics`, `repository_topics`를 migration으로 만든다.
+- [x] `discovery_runs`, `tracking_runs`, `star_snapshots`, `bootstrap_star_history`, `rankings`를 migration으로 만든다.
+- [x] tracking 시작 시 대상 확정과 repository별 success/failed/skipped 기록을 위한 최소 run-item 테이블을 추가한다. `(tracking_run_id, repository_id)`를 unique하게 한다.
+- [x] `github_id UNIQUE`, run/repository 및 bootstrap 복합 key, ranking 복합 PK, `scheduled_at UNIQUE`를 구현한다.
+- [x] `star_snapshots(repository_id, captured_at DESC)`와 읽기 endpoint에 필요한 최소 index를 추가한다.
+- [x] timestamp는 timezone-aware PostgreSQL type으로 저장하고 애플리케이션 경계에서 UTC를 강제한다.
+- [x] star count와 run count가 음수가 되지 않도록 제약하고 period/status 값은 PRD 값만 허용한다.
+- [x] discovery 실패 구간을 재시도 가능한 구조로 저장한다. MVP에는 JSONB 또는 단순 child table 중 실제 query에 필요한 더 단순한 방식을 선택한다.
+- [x] Phase 3의 category seed/sync를 transaction으로 DB에 적용한다.
 
 ### 완료 조건
 
-- [ ] 빈 PostgreSQL DB에 migration을 적용하면 PRD 데이터 모델과 제약이 생성된다.
-- [ ] repository rename/transfer가 owner/name 변경일 뿐 `github_id` identity를 바꾸지 않는다.
-- [ ] snapshot과 bootstrap 원천 row를 update/delete하지 않고 새 run을 누적할 수 있다.
-- [ ] run 대상, 결과, 공개 여부를 DB만으로 감사할 수 있다.
+- [x] 빈 PostgreSQL DB에 migration을 적용하면 PRD 데이터 모델과 제약이 생성된다.
+- [x] repository rename/transfer가 owner/name 변경일 뿐 `github_id` identity를 바꾸지 않는다.
+- [x] snapshot과 bootstrap 원천 row를 update/delete하지 않고 새 run을 누적할 수 있다.
+- [x] run 대상, 결과, 공개 여부를 DB만으로 감사할 수 있다.
 
 ### 테스트 방법
 
-- [ ] 빈 DB에 `alembic upgrade head`를 실행한다.
-- [ ] downgrade 후 다시 upgrade하는 migration smoke test를 실행한다.
-- [ ] unique/FK/check constraint와 UTC round-trip integration test를 실행한다.
-- [ ] category seed/sync를 두 번 실행해 idempotency를 확인한다.
+- [x] 빈 DB에 `alembic upgrade head`를 실행한다.
+- [x] downgrade 후 다시 upgrade하는 migration smoke test를 실행한다.
+- [x] unique/FK/check constraint와 UTC round-trip integration test를 실행한다.
+- [x] category seed/sync를 두 번 실행해 idempotency를 확인한다.
 
 ### 실행 기록
 
-- 미실행
+- 2026-10-11: Alembic 초기 migration으로 11개 MVP 테이블과 `github_id`, schedule slot, run/repository, bootstrap, ranking key 및 FK/check/index를 생성. tracking target/result용 `tracking_run_items`와 재시도 가능한 discovery 실패 구간용 JSONB 배열을 포함.
+- 2026-10-11: 모든 timestamp를 PostgreSQL timezone-aware type으로 구성하고 공용 DB 연결과 migration session을 UTC로 고정. 격리 schema에서 rename identity 유지, 두 tracking run의 snapshot 누적, run item/result/publication 감사 및 UTC round-trip을 검증.
+- 2026-10-11: `repovil-sync-categories`를 추가. 전체 YAML 선검증 후 단일 transaction에서 slug/name identity로 upsert하고 제거된 category/topic/mapping을 soft-deactivate하며 재추가 시 기존 ID로 복구. 반복 실행 시 row와 timestamp가 변하지 않고 DB 오류 시 전체 rollback됨을 검증.
+- 2026-10-11: 격리 PostgreSQL schema에서 `upgrade → downgrade → upgrade` 및 unique/FK/check constraint 통합 테스트 통과. `TEST_DATABASE_URL=... uv run pytest` — 29 passed.
+- 2026-10-11: `uv run ruff check .`, `uv run mypy` — 통과. Phase 4 완료, 요청에 따라 Phase 5는 시작하지 않음.
 
 ## Phase 5 — GitHubClient REST adapter
 

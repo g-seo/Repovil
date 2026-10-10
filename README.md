@@ -34,6 +34,13 @@ Validate the category/topic discovery configuration without changing data:
 uv run repovil-categories-check
 ```
 
+Apply the database migration and synchronize the validated category configuration:
+
+```bash
+uv run alembic upgrade head
+uv run repovil-sync-categories
+```
+
 ## Quality checks
 
 ```bash
