@@ -1,0 +1,58 @@
+# Initial MVP category/topic mapping. All is a UI filter and is not stored here.
+categories:
+  - name: AI Agents
+    slug: ai-agents
+    active: true
+    display_order: 1
+    topics:
+      - ai-agent
+      - ai-agents
+      - agentic-ai
+      - ai-agent-framework
+
+  - name: Skills
+    slug: skills
+    active: true
+    display_order: 2
+    topics:
+      - agent-skills
+      - ai-agent-skills
+      - claude-code-skills
+      - codex-skills
+
+  - name: MCP Servers
+    slug: mcp-servers
+    active: true
+    display_order: 3
+    topics:
+      - mcp-server
+      - mcp-servers
+
+  - name: Dev Tools
+    slug: dev-tools
+    active: true
+    display_order: 4
+    topics:
+      - ai-coding
+      - ai-coding-assistant
+      - ai-developer-tools
+      - coding-agents
+
+  - name: RAG
+    slug: rag
+    active: true
+    display_order: 5
+    topics:
+      - rag
+      - retrieval-augmented-generation
+      - vector-database
+
+  - name: Observability&Eval
+    slug: observability-eval
+    active: true
+    display_order: 6
+    topics:
+      - llm-observability
+      - agent-observability
+      - llm-evaluation
+      - agent-evaluation

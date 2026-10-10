@@ -11,6 +11,7 @@ dependencies = [
   "fastapi>=0.115,<1",
   "psycopg[binary]>=3.2,<4",
   "pydantic-settings>=2.7,<3",
+  "pyyaml>=6,<7",
   "uvicorn>=0.34,<1",
 ]
 
@@ -18,12 +19,14 @@ dependencies = [
 repovil-api = "repovil.api:main"
 repovil-worker = "repovil.worker:main"
 repovil-db-check = "repovil.db:main"
+repovil-categories-check = "repovil.category_config:main"
 
 [dependency-groups]
 dev = [
   "mypy>=1.14,<2",
   "pytest>=8.3,<10",
   "ruff>=0.9,<1",
+  "types-pyyaml>=6,<7",
 ]
 
 [tool.hatch.build.targets.wheel]

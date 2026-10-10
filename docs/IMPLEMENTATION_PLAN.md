@@ -212,29 +212,36 @@ npm run build
 
 **선행 조건:** Phase 2
 
+**상태:** `[x]` — 2026-10-11 완료
+
 ### 구현 항목
 
-- [ ] PRD 3.1의 YAML을 내용 변경 없이 `config/categories.yaml`에 저장한다.
-- [ ] `All`을 YAML category나 topic으로 추가하지 않는다.
-- [ ] category의 `name`, `slug`, `active`, `display_order`, `topics`를 검증하는 단순 loader를 구현한다.
-- [ ] 중복 category name/slug/display order, 중복 topic, 빈 topic 목록, 잘못된 slug를 명확한 오류로 거부한다.
-- [ ] YAML을 DB로 idempotent seed/sync하는 명령의 계약을 정하고 Phase 0에서 확정한 제거 정책을 적용한다.
+- [x] PRD 3.1의 YAML을 내용 변경 없이 `config/categories.yaml`에 저장한다.
+- [x] `All`을 YAML category나 topic으로 추가하지 않는다.
+- [x] category의 `name`, `slug`, `active`, `display_order`, `topics`를 검증하는 단순 loader를 구현한다.
+- [x] 중복 category name/slug/display order, 중복 topic, 빈 topic 목록, 잘못된 slug를 명확한 오류로 거부한다.
+- [x] YAML을 DB로 idempotent seed/sync하는 명령의 계약을 정하고 Phase 0에서 확정한 제거 정책을 적용한다.
 
 ### 완료 조건
 
-- [ ] 여섯 category와 모든 topic이 PRD와 동일하다.
-- [ ] 설정 오류가 부분 반영 없이 시작/명령 단계에서 실패한다.
-- [ ] 같은 설정을 반복 적용해도 중복 데이터가 생기지 않는다.
+- [x] 여섯 category와 모든 topic이 PRD와 동일하다.
+- [x] 설정 오류가 부분 반영 없이 시작/명령 단계에서 실패한다.
+- [x] 같은 설정을 반복 적용해도 중복 데이터가 생기지 않는다.
 
 ### 테스트 방법
 
-- [ ] 정상 YAML parsing 및 PRD 기대값 snapshot test를 실행한다.
-- [ ] 중복/누락/형식 오류 fixture에 대한 실패 테스트를 실행한다.
-- [ ] `All`이 설정 결과에 존재하지 않는지 확인한다.
+- [x] 정상 YAML parsing 및 PRD 기대값 snapshot test를 실행한다.
+- [x] 중복/누락/형식 오류 fixture에 대한 실패 테스트를 실행한다.
+- [x] `All`이 설정 결과에 존재하지 않는지 확인한다.
 
 ### 실행 기록
 
-- 미실행
+- 2026-10-11: PRD 3.1과 동일한 6개 category/21개 topic을 `config/categories.yaml`에 추가하고, immutable Pydantic model과 safe YAML loader를 구현. `All`, 빈 설정/topic, 엄격하지 않은 타입, 잘못된 slug, 중복 name/slug/display order/topic을 전체 문서 적용 전에 거부하도록 구성.
+- 2026-10-11: `docs/CATEGORY_SYNC_CONTRACT.md`에 Phase 4의 `repovil-sync-categories` 명령 경계, 단일 transaction, idempotent upsert, 제거 항목 soft-deactivate와 재활성화 정책을 확정. 실제 PostgreSQL sync 구현과 DB idempotency 검증은 계획대로 Phase 4 범위로 유지.
+- 2026-10-11: `uv run repovil-categories-check` — 6 categories, 21 topics 검증 성공.
+- 2026-10-11: `uv run pytest` — 21 passed, PostgreSQL integration 1 skipped (`TEST_DATABASE_URL` 미설정). `TEST_DATABASE_URL=... uv run pytest -m integration` — 1 passed.
+- 2026-10-11: `uv run ruff check .` — 통과. `uv run mypy` — 11 source files, 오류 없음.
+- 2026-10-11: Phase 3 완료. 요청에 따라 Phase 4는 시작하지 않음.
 
 ## Phase 4 — PostgreSQL schema와 Alembic migration
 

@@ -28,6 +28,12 @@ implemented:
 uv run repovil-worker
 ```
 
+Validate the category/topic discovery configuration without changing data:
+
+```bash
+uv run repovil-categories-check
+```
+
 ## Quality checks
 
 ```bash
