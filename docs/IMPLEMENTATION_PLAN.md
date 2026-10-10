@@ -333,37 +333,43 @@ npm run build
 
 **선행 조건:** Phase 5
 
+**상태:** `[x]` — 2026-10-11 완료
+
 ### 구현 항목
 
-- [ ] 활성 topic 각각에 대해 public, non-fork, non-archived, stars 200 이상 Search를 실행한다.
-- [ ] 1,000건 초과 star 구간을 재귀 분할하고, 경계 중복은 `github_id`로 제거한다.
-- [ ] `incomplete_results`, pagination/search 실패, rate limit, 더 분할할 수 없는 과다 구간을 실패 구간으로 저장한다.
-- [ ] 실패 구간만 안전하게 재시도할 수 있게 하고, 미완료 run을 정상 완료로 표시하지 않는다.
-- [ ] 결과를 다시 eligibility 검증한 뒤 신규 repository를 저장하고 기존 metadata와 topic을 갱신한다.
-- [ ] 같은 repository가 여러 topic/category에 속하는 것을 보존한다.
-- [ ] `github_id` 기준 upsert로 rename/transfer 시 owner/name/url을 갱신한다.
-- [ ] 신규 eligible repository는 bootstrap 대기 상태로 저장하고 Phase 7 성공 후 tracking 대상으로 활성화한다.
-- [ ] discovery job 중복 실행을 PostgreSQL lock/run 상태로 방지한다.
-- [ ] run별 시작/종료, 발견 수, 추가 수, 상태, 실패 구간을 구조화 로그와 DB에 기록한다.
+- [x] 활성 topic 각각에 대해 public, non-fork, non-archived, stars 200 이상 Search를 실행한다.
+- [x] 1,000건 초과 star 구간을 재귀 분할하고, 경계 중복은 `github_id`로 제거한다.
+- [x] `incomplete_results`, pagination/search 실패, rate limit, 더 분할할 수 없는 과다 구간을 실패 구간으로 저장한다.
+- [x] 실패 구간만 안전하게 재시도할 수 있게 하고, 미완료 run을 정상 완료로 표시하지 않는다.
+- [x] 결과를 다시 eligibility 검증한 뒤 신규 repository를 저장하고 기존 metadata와 topic을 갱신한다.
+- [x] 같은 repository가 여러 topic/category에 속하는 것을 보존한다.
+- [x] `github_id` 기준 upsert로 rename/transfer 시 owner/name/url을 갱신한다.
+- [x] 신규 eligible repository는 bootstrap 대기 상태로 저장하고 Phase 7 성공 후 tracking 대상으로 활성화한다.
+- [x] discovery job 중복 실행을 PostgreSQL lock/run 상태로 방지한다.
+- [x] run별 시작/종료, 발견 수, 추가 수, 상태, 실패 구간을 구조화 로그와 DB에 기록한다.
 
 ### 완료 조건
 
-- [ ] 같은 결과를 반복 처리해도 repository와 관계가 중복되지 않는다.
-- [ ] 일부 topic/구간 실패가 성공으로 기록되지 않고 재실행 가능하다.
-- [ ] stars 200 미만 repository는 최초 저장되지 않는다.
-- [ ] multi-category repository가 한 repository row와 여러 topic 관계로 저장된다.
+- [x] 같은 결과를 반복 처리해도 repository와 관계가 중복되지 않는다.
+- [x] 일부 topic/구간 실패가 성공으로 기록되지 않고 재실행 가능하다.
+- [x] stars 200 미만 repository는 최초 저장되지 않는다.
+- [x] multi-category repository가 한 repository row와 여러 topic 관계로 저장된다.
 
 ### 테스트 방법
 
-- [ ] 중복 discovery와 여러 topic 중복 결과 테스트를 실행한다.
-- [ ] 999/1,000/1,001건 구간, inclusive boundary, 단일 star 과다 구간 테스트를 실행한다.
-- [ ] `incomplete_results`, 중간 page 실패, rate limit 후 재시도 테스트를 실행한다.
-- [ ] 신규/기존/rename/transfer metadata update integration test를 실행한다.
-- [ ] 동시 실행 시 하나만 진행되는 DB lock test를 실행한다.
+- [x] 중복 discovery와 여러 topic 중복 결과 테스트를 실행한다.
+- [x] 999/1,000/1,001건 구간, inclusive boundary, 단일 star 과다 구간 테스트를 실행한다.
+- [x] `incomplete_results`, 중간 page 실패, rate limit 후 재시도 테스트를 실행한다.
+- [x] 신규/기존/rename/transfer metadata update integration test를 실행한다.
+- [x] 동시 실행 시 하나만 진행되는 DB lock test를 실행한다.
 
 ### 실행 기록
 
-- 미실행
+- 2026-10-11: `repovil-discovery` worker를 추가. DB의 활성 category/topic만 대상으로 GitHub Search를 실행하고, 1,000건 초과 범위를 inclusive 경계가 겹치지 않게 재귀 분할하며 `github_id`로 결과를 중복 제거하도록 구현.
+- 2026-10-11: public/non-fork/non-archived/stars 200 이상과 활성 topic 교집합을 저장 전에 재검증. 신규 repository는 `bootstrap_pending`, 기존 identity는 metadata/topic을 갱신하고 inactive repository의 재발견은 기존 history를 유지한 채 재활성화하도록 구성.
+- 2026-10-11: `incomplete_results`, pagination/API/rate-limit 실패와 단일 star 과다 구간을 request metadata가 포함된 JSONB 실패 구간으로 보존. `--retry-run`은 해당 run의 활성 topic 실패 구간만 새 run으로 재실행하며, PostgreSQL session advisory lock으로 중복 실행을 차단.
+- 2026-10-11: 999/1,000/1,001건, inclusive 분할, 단일 star 과다, incomplete/middle-page/rate-limit 실패, 중복/multi-topic/eligibility/rename/reactivation, 실패 구간 재실행, DB lock 테스트 추가. `TEST_DATABASE_URL=... uv run pytest` — 66 passed, live 1 skipped.
+- 2026-10-11: `uv run ruff check .`, `uv run mypy`, `git diff --check` 및 `repovil-discovery --help` smoke — 모두 통과. Phase 6 완료, 요청에 따라 Phase 7은 시작하지 않음.
 
 ## Phase 7 — Historical bootstrap
 
