@@ -2,7 +2,7 @@
 
 from functools import lru_cache
 
-from pydantic import PostgresDsn
+from pydantic import NonNegativeInt, PositiveFloat, PostgresDsn, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     database_url: PostgresDsn = PostgresDsn(
         "postgresql://repovil:repovil-local@localhost:5432/repovil"
     )
+    github_token: SecretStr | None = None
+    github_api_version: str = "2026-03-10"
+    github_api_timeout_seconds: PositiveFloat = 10.0
+    github_api_max_retries: NonNegativeInt = 3
 
 
 @lru_cache

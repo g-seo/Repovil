@@ -39,6 +39,7 @@ addopts = "--strict-markers"
 testpaths = ["backend/tests"]
 markers = [
   "integration: requires external infrastructure such as PostgreSQL",
+  "live: requires explicit opt-in and access to an external service",
 ]
 
 [tool.ruff]

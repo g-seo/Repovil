@@ -291,34 +291,41 @@ npm run build
 
 **선행 조건:** Phase 4
 
+**상태:** `[x]` — 2026-10-11 완료
+
 ### 구현 항목
 
-- [ ] `search_repositories`, `get_repository`, `get_repository_stats`, `get_star_history`를 가진 최소 `GitHubClient`를 구현한다.
-- [ ] API version, auth header, timeout, user agent와 response parsing을 한 곳에서 관리한다.
-- [ ] pagination을 endpoint별 한계 안에서 구현한다.
-- [ ] timeout, connection error, 5xx, retry 가능한 403/429에 bounded exponential backoff를 적용한다.
-- [ ] 4xx를 not-found/자격 상태/인증 오류/rate limit/validation 오류로 구분하고 무한 재시도하지 않는다.
-- [ ] `Retry-After`와 `x-ratelimit-reset`을 우선하며, request별 rate-limit metadata를 worker가 기록할 수 있게 한다.
-- [ ] 구조화 로그 필드에 response status, retry count, duration을 제공하고 token은 redaction한다.
-- [ ] API/FastAPI request path에서 이 client를 import하거나 호출하지 못하도록 package 경계와 테스트를 둔다.
+- [x] `search_repositories`, `get_repository`, `get_repository_stats`, `get_star_history`를 가진 최소 `GitHubClient`를 구현한다.
+- [x] API version, auth header, timeout, user agent와 response parsing을 한 곳에서 관리한다.
+- [x] pagination을 endpoint별 한계 안에서 구현한다.
+- [x] timeout, connection error, 5xx, retry 가능한 403/429에 bounded exponential backoff를 적용한다.
+- [x] 4xx를 not-found/자격 상태/인증 오류/rate limit/validation 오류로 구분하고 무한 재시도하지 않는다.
+- [x] `Retry-After`와 `x-ratelimit-reset`을 우선하며, request별 rate-limit metadata를 worker가 기록할 수 있게 한다.
+- [x] 구조화 로그 필드에 response status, retry count, duration을 제공하고 token은 redaction한다.
+- [x] API/FastAPI request path에서 이 client를 import하거나 호출하지 못하도록 package 경계와 테스트를 둔다.
 
 ### 완료 조건
 
-- [ ] 모든 GitHub 호출이 `GitHubClient`를 통한다.
-- [ ] client는 DB나 ranking 정책을 알지 못한다.
-- [ ] 실패가 typed result/exception으로 worker에 전달되어 run 판정에 사용할 수 있다.
-- [ ] Phase 1 fixture로 응답 parsing이 재현된다.
+- [x] 모든 GitHub 호출이 `GitHubClient`를 통한다.
+- [x] client는 DB나 ranking 정책을 알지 못한다.
+- [x] 실패가 typed result/exception으로 worker에 전달되어 run 판정에 사용할 수 있다.
+- [x] Phase 1 fixture로 응답 parsing이 재현된다.
 
 ### 테스트 방법
 
-- [ ] pagination, timeout, retry/backoff, 404, 422, 403/429, 5xx unit test를 실행한다.
-- [ ] rate-limit header와 `Retry-After` 우선순위 테스트를 실행한다.
-- [ ] API layer가 GitHubClient를 호출하지 않는 architecture test를 실행한다.
-- [ ] opt-in live smoke test로 Phase 1 endpoint를 다시 확인한다.
+- [x] pagination, timeout, retry/backoff, 404, 422, 403/429, 5xx unit test를 실행한다.
+- [x] rate-limit header와 `Retry-After` 우선순위 테스트를 실행한다.
+- [x] API layer가 GitHubClient를 호출하지 않는 architecture test를 실행한다.
+- [x] opt-in live smoke test로 Phase 1 endpoint를 다시 확인한다.
 
 ### 실행 기록
 
-- 미실행
+- 2026-10-11: 표준 라이브러리 기반 동기 `GitHubClient`와 worker 전용 생성 경계를 추가. 검증된 REST API version/auth/timeout/user-agent, endpoint별 pagination, redirect, 엄격한 metadata/count/history parsing을 한 곳에서 관리하고 DB/ranking 의존성은 두지 않음.
+- 2026-10-11: timeout/connection/5xx/rate-limit에 제한된 exponential retry를 적용하고 `Retry-After` → `x-ratelimit-reset` → secondary-limit 60초 backoff 우선순위를 구현. 404, 인증, rate-limit, 422, 5xx, transport/response-format 실패를 typed exception으로 구분하고 성공/실패 모두 request metadata를 노출.
+- 2026-10-11: response status, retry count, duration, rate-limit remaining 구조화 로그와 `SecretStr` 환경 설정을 추가. 로그와 예외에 token이 포함되지 않음을 검증하고 API import graph가 GitHubClient에 도달하지 않는 architecture test를 추가.
+- 2026-10-11: `GITHUB_LIVE_TEST=1 uv run pytest backend/tests/test_github_client.py::test_live_verified_public_endpoints -q` — public read-only Search, repository metadata와 rename redirect, count, history 모두 통과(1 passed).
+- 2026-10-11: `TEST_DATABASE_URL=... uv run pytest` — 57 passed, live 1 skipped. `uv run ruff check .`, `uv run mypy`, `git diff --check` — 모두 통과.
+- 2026-10-11: Phase 5 완료. 요청에 따라 Phase 6은 시작하지 않음.
 
 ## Phase 6 — Discovery worker
 
