@@ -1,6 +1,6 @@
 """Background worker entry point.
 
-Discovery and tracking commands are added in their dedicated implementation phases.
+Discovery, bootstrap, and tracking commands live in their dedicated worker modules.
 """
 
 from repovil.github_client import GitHubClient

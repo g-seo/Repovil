@@ -418,37 +418,43 @@ npm run build
 
 **선행 조건:** Phase 7
 
+**상태:** `[x]` — 2026-10-11 완료
+
 ### 구현 항목
 
-- [ ] UTC schedule slot을 `scheduled_at`으로 사용해 idempotent `tracking_run`을 만들고 PostgreSQL 기반 중복 실행 방지를 적용한다.
-- [ ] run 시작 시 활성 tracking 대상 전체를 run-item으로 확정한다.
-- [ ] 각 대상의 current star 수, metadata, topics와 eligibility를 GitHubClient로 확인한다.
-- [ ] 실제 응답 측정 시각을 `captured_at`으로 저장하고 scheduler 예정 시각으로 대체하지 않는다.
-- [ ] 성공한 repository만 해당 run snapshot을 저장한다.
-- [ ] transient 실패는 failed로 기록하고 이전 snapshot을 현재 run의 값으로 복사하지 않는다.
-- [ ] stars 200 미만, archived, private, deleted, 모든 설정 topic 이탈을 확인하면 기록은 유지한 채 tracking/publication에서 비활성화한다.
-- [ ] 비활성 repository가 이후 discovery에서 자격을 다시 만족하면 재활성화한다.
-- [ ] repository별 success/failed/skipped와 오류, retry count, duration을 기록한다.
-- [ ] `COMPLETED`, `PARTIAL`, `FAILED`를 PRD 정의대로 계산한다. publication은 다음 Phase에서 별도로 판정한다.
+- [x] UTC schedule slot을 `scheduled_at`으로 사용해 idempotent `tracking_run`을 만들고 PostgreSQL 기반 중복 실행 방지를 적용한다.
+- [x] run 시작 시 활성 tracking 대상 전체를 run-item으로 확정한다.
+- [x] 각 대상의 current star 수, metadata, topics와 eligibility를 GitHubClient로 확인한다.
+- [x] 실제 응답 측정 시각을 `captured_at`으로 저장하고 scheduler 예정 시각으로 대체하지 않는다.
+- [x] 성공한 repository만 해당 run snapshot을 저장한다.
+- [x] transient 실패는 failed로 기록하고 이전 snapshot을 현재 run의 값으로 복사하지 않는다.
+- [x] stars 200 미만, archived, private, deleted, 모든 설정 topic 이탈을 확인하면 기록은 유지한 채 tracking/publication에서 비활성화한다.
+- [x] 비활성 repository가 이후 discovery에서 자격을 다시 만족하면 재활성화한다.
+- [x] repository별 success/failed/skipped와 오류, retry count, duration을 기록한다.
+- [x] `COMPLETED`, `PARTIAL`, `FAILED`를 PRD 정의대로 계산한다. publication은 다음 Phase에서 별도로 판정한다.
 
 ### 완료 조건
 
-- [ ] 같은 schedule slot 재실행이 중복 run/snapshot을 만들지 않는다.
-- [ ] target 목록은 run 도중 discovery 변경의 영향을 받지 않는다.
-- [ ] 실패 대상에 stale snapshot이 생성되지 않는다.
-- [ ] rename과 자격 상실/재활성화가 history를 잃지 않고 `github_id` 동일성을 유지한다.
+- [x] 같은 schedule slot 재실행이 중복 run/snapshot을 만들지 않는다.
+- [x] target 목록은 run 도중 discovery 변경의 영향을 받지 않는다.
+- [x] 실패 대상에 stale snapshot이 생성되지 않는다.
+- [x] rename과 자격 상실/재활성화가 history를 잃지 않고 `github_id` 동일성을 유지한다.
 
 ### 테스트 방법
 
-- [ ] 전체 성공, 일부 실패, 전부 실패, 분모 0 run 테스트를 실행한다.
-- [ ] timeout/retry exhaustion 시 stale snapshot 미생성 테스트를 실행한다.
-- [ ] rename, stars 하락, archived/private/deleted/topic 이탈 및 재활성화 테스트를 실행한다.
-- [ ] concurrent/duplicate schedule 실행과 unique constraint 테스트를 실행한다.
-- [ ] captured_at이 실제 측정 시각이며 UTC로 보존되는지 확인한다.
+- [x] 전체 성공, 일부 실패, 전부 실패, 분모 0 run 테스트를 실행한다.
+- [x] timeout/retry exhaustion 시 stale snapshot 미생성 테스트를 실행한다.
+- [x] rename, stars 하락, archived/private/deleted/topic 이탈 및 재활성화 테스트를 실행한다.
+- [x] concurrent/duplicate schedule 실행과 unique constraint 테스트를 실행한다.
+- [x] captured_at이 실제 측정 시각이며 UTC로 보존되는지 확인한다.
 
 ### 실행 기록
 
-- 미실행
+- 2026-10-11: `repovil-tracking` worker를 추가. 현재 시각을 6시간 UTC slot으로 정규화하고 `scheduled_at` uniqueness와 PostgreSQL advisory lock으로 중복 실행을 막으며, run 생성 시 활성 repository 전체를 run-item으로 확정하도록 구현.
+- 2026-10-11: repository metadata/topic/identity와 별도 current star count를 `GitHubClient`로 확인하고 성공 응답 직후의 실제 UTC 시각만 snapshot으로 저장. rename/transfer metadata와 topic 관계를 같은 `github_id` row에 갱신하고 실패 시 과거 snapshot을 복사하지 않음.
+- 2026-10-11: stars 하락, archived/private/deleted/fork/topic 이탈과 run 도중 비활성화는 `skipped`로 기록해 repository/history를 보존하고 inactive 전환. transient 오류는 `failed`, 인증 오류는 미처리 대상까지 failed로 종결하며 item별 status/error/response/retry/duration을 감사 가능하게 저장.
+- 2026-10-11: 전체 성공/일부 실패/전부 실패/분모 0, stale snapshot 금지, rename/topic 갱신, 각 eligibility 상실, 고정 target, 중복 slot, concurrent lock, 실제 captured_at 테스트 추가. 기존 discovery 재활성화 회귀 테스트를 포함한 `TEST_DATABASE_URL=... uv run pytest` — 91 passed, live 1 skipped.
+- 2026-10-11: `uv run ruff check .`, `uv run mypy`, `git diff --check`, `repovil-tracking --help` — 모두 통과. Phase 8 완료, 요청에 따라 Phase 9는 시작하지 않음.
 
 ## Phase 9 — Ranking 계산과 원자적 공개
 
