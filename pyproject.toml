@@ -1,0 +1,53 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "repovil"
+version = "0.1.0"
+description = "AI OSS Momentum Tracker"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "psycopg[binary]>=3.2,<4",
+  "pydantic-settings>=2.7,<3",
+  "uvicorn>=0.34,<1",
+]
+
+[project.scripts]
+repovil-api = "repovil.api:main"
+repovil-worker = "repovil.worker:main"
+repovil-db-check = "repovil.db:main"
+
+[dependency-groups]
+dev = [
+  "mypy>=1.14,<2",
+  "pytest>=8.3,<10",
+  "ruff>=0.9,<1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["backend/src/repovil"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers"
+testpaths = ["backend/tests"]
+markers = [
+  "integration: requires external infrastructure such as PostgreSQL",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["repovil"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["backend/src", "backend/tests"]
+

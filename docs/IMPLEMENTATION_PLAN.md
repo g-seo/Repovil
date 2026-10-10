@@ -169,32 +169,42 @@ npm run build
 
 **선행 조건:** Phase 1 통과
 
+**상태:** `[x]` — 2026-10-10 완료
+
 ### 구현 항목
 
-- [ ] `uv` 기반 Python package, FastAPI app, worker entry point, test directory를 구성한다.
-- [ ] Next.js + TypeScript app을 구성한다.
-- [ ] PostgreSQL만 포함한 local Docker Compose를 구성한다.
-- [ ] 환경 변수 설정과 `.env.example`을 추가하되 실제 secret은 추가하지 않는다.
-- [ ] backend에 pytest, lint, type check를 위한 최소 dev dependency와 명령을 구성한다.
-- [ ] frontend에 test, lint, type check, build 명령을 구성한다. UI 단위 테스트에 필요한 최소 도구만 도입한다.
-- [ ] API 코드와 worker 코드의 entry point를 분리하되 동일 backend package와 domain code를 공유하게 한다.
+- [x] `uv` 기반 Python package, FastAPI app, worker entry point, test directory를 구성한다.
+- [x] Next.js + TypeScript app을 구성한다.
+- [x] PostgreSQL만 포함한 local Docker Compose를 구성한다.
+- [x] 환경 변수 설정과 `.env.example`을 추가하되 실제 secret은 추가하지 않는다.
+- [x] backend에 pytest, lint, type check를 위한 최소 dev dependency와 명령을 구성한다.
+- [x] frontend에 test, lint, type check, build 명령을 구성한다. UI 단위 테스트에 필요한 최소 도구만 도입한다.
+- [x] API 코드와 worker 코드의 entry point를 분리하되 동일 backend package와 domain code를 공유하게 한다.
 
 ### 완료 조건
 
-- [ ] 빈 FastAPI app과 Next.js app이 로컬에서 시작된다.
-- [ ] PostgreSQL 연결 설정을 환경 변수로 주입할 수 있다.
-- [ ] frontend/backend 품질 명령이 CI와 로컬에서 동일하게 실행 가능하다.
-- [ ] Redis, task queue, 범용 repository/service framework 등 불필요한 구성요소가 없다.
+- [x] 빈 FastAPI app과 Next.js app이 로컬에서 시작된다.
+- [x] PostgreSQL 연결 설정을 환경 변수로 주입할 수 있다.
+- [x] frontend/backend 품질 명령이 CI와 로컬에서 동일하게 실행 가능하다.
+- [x] Redis, task queue, 범용 repository/service framework 등 불필요한 구성요소가 없다.
 
 ### 테스트 방법
 
-- [ ] backend unit test와 lint/type check를 실행한다.
-- [ ] frontend test, lint, type check, production build를 실행한다.
-- [ ] Docker Compose로 PostgreSQL을 시작하고 연결 smoke test를 실행한다.
+- [x] backend unit test와 lint/type check를 실행한다.
+- [x] frontend test, lint, type check, production build를 실행한다.
+- [x] Docker Compose로 PostgreSQL을 시작하고 연결 smoke test를 실행한다.
 
 ### 실행 기록
 
-- 미실행
+- 2026-10-10: `uv sync` 성공. Python 3.12 환경과 `uv.lock`을 생성하고 FastAPI/worker/DB check entry point를 설치.
+- 2026-10-10: `uv run pytest` — 4 passed, PostgreSQL integration 1 skipped (`TEST_DATABASE_URL` 미설정).
+- 2026-10-10: `uv run ruff check .` — 통과. `uv run mypy` — 9 source files, 오류 없음.
+- 2026-10-10: `npm test` — 1 passed. `npm run lint`, `npm run typecheck` — 통과. `npm run build` — Next.js 16.4.0 production build 성공.
+- 2026-10-10: Uvicorn `/openapi.json` HTTP 200 및 Next.js production server `/` HTTP 200 기동 smoke 성공. worker entry point 실행 성공.
+- 2026-10-10: `npm audit --omit=dev` — production dependency 취약점 0건. 전체 audit에는 `eslint-config-next`의 전이 `braces` 취약점 5건(high)이 남으며 안전한 non-breaking fix가 제공되지 않음.
+- 2026-10-10: Docker Desktop WSL integration 활성화 후 `docker compose config --quiet` 통과, PostgreSQL 17 컨테이너 health check 성공.
+- 2026-10-10: `TEST_DATABASE_URL=... uv run pytest -m integration` — 1 passed. `uv run repovil-db-check` — 연결 성공. PostgreSQL integration을 포함한 전체 `uv run pytest` — 5 passed.
+- 2026-10-10: Phase 2 완료. 요청에 따라 Phase 3은 시작하지 않음.
 
 ## Phase 3 — Topic YAML 분리와 설정 검증
 
