@@ -462,39 +462,45 @@ npm run build
 
 **선행 조건:** Phase 8
 
+**상태:** `[x]` — 2026-10-11 완료
+
 ### 구현 항목
 
-- [ ] 각 repository의 실제 `captured_at`에서 24h/7d/30d `target_time`을 계산한다.
-- [ ] target 이전의 가장 가까운 자체 snapshot이며 target과 차이가 최대 6시간인 경우만 실제 baseline으로 선택한다.
-- [ ] 실제 baseline이 없을 때 7d/30d만 유효한 bootstrap baseline으로 fallback하고 `is_estimated=true`를 저장한다.
-- [ ] 24h는 실제 baseline이 없으면 제외한다.
-- [ ] `star_gain = current - baseline`, `score = ln((current+1)/(baseline+1))`를 구현하고 `star_gain > 0`만 저장한다.
-- [ ] 정렬을 `score DESC → star_gain DESC → github_id ASC`로 고정한다.
-- [ ] tracking 성공률을 `success / (success + failed)`로 계산하고 skipped는 분모에서 제외한다.
-- [ ] 분모가 0이면 공개하지 않고, 성공률 95% 이상일 때만 ranking 전체 생성과 `published_at` 설정을 하나의 DB transaction으로 수행한다.
-- [ ] 95% 미만이거나 계산/transaction이 실패하면 직전 공개 run을 유지한다.
-- [ ] 카테고리별 ranking을 복제 저장하지 않고 topic mapping join으로 조회하며 repository 중복을 제거한다.
+- [x] 각 repository의 실제 `captured_at`에서 24h/7d/30d `target_time`을 계산한다.
+- [x] target 이전의 가장 가까운 자체 snapshot이며 target과 차이가 최대 6시간인 경우만 실제 baseline으로 선택한다.
+- [x] 실제 baseline이 없을 때 7d/30d만 유효한 bootstrap baseline으로 fallback하고 `is_estimated=true`를 저장한다.
+- [x] 24h는 실제 baseline이 없으면 제외한다.
+- [x] `star_gain = current - baseline`, `score = ln((current+1)/(baseline+1))`를 구현하고 `star_gain > 0`만 저장한다.
+- [x] 정렬을 `score DESC → star_gain DESC → github_id ASC`로 고정한다.
+- [x] tracking 성공률을 `success / (success + failed)`로 계산하고 skipped는 분모에서 제외한다.
+- [x] 분모가 0이면 공개하지 않고, 성공률 95% 이상일 때만 ranking 전체 생성과 `published_at` 설정을 하나의 DB transaction으로 수행한다.
+- [x] 95% 미만이거나 계산/transaction이 실패하면 직전 공개 run을 유지한다.
+- [x] 카테고리별 ranking을 복제 저장하지 않고 topic mapping join으로 조회하며 repository 중복을 제거한다.
 
 ### 완료 조건
 
-- [ ] 세 기간의 ranking이 PRD 공식과 baseline 허용 오차를 정확히 따른다.
-- [ ] 일부 실패 run도 95% 이상이면 공개할 수 있고, 미만이면 공개되지 않는다.
-- [ ] API가 읽는 published run에는 ranking 전체가 있거나 전혀 없다.
-- [ ] `rankings.current_stars`가 공개 run의 snapshot과 일치한다.
+- [x] 세 기간의 ranking이 PRD 공식과 baseline 허용 오차를 정확히 따른다.
+- [x] 일부 실패 run도 95% 이상이면 공개할 수 있고, 미만이면 공개되지 않는다.
+- [x] API가 읽는 published run에는 ranking 전체가 있거나 전혀 없다.
+- [x] `rankings.current_stars`가 공개 run의 snapshot과 일치한다.
 
 ### 테스트 방법
 
-- [ ] target 직전/정확히 6시간/6시간 초과 baseline 선택 테스트를 실행한다.
-- [ ] 24h bootstrap 금지, 7d/30d fallback, invalid bootstrap 제외 테스트를 실행한다.
-- [ ] star 감소/0 gain 제외와 score 수치 테스트를 실행한다.
-- [ ] score 동점, gain 동점, 최종 `github_id` 동점 해소 테스트를 실행한다.
-- [ ] 94.99%, 95%, 100%, 분모 0 publication 판정 테스트를 실행한다.
-- [ ] transaction 중 실패 시 직전 published run 유지 테스트를 실행한다.
-- [ ] multi-topic category join 중복 제거 테스트를 실행한다.
+- [x] target 직전/정확히 6시간/6시간 초과 baseline 선택 테스트를 실행한다.
+- [x] 24h bootstrap 금지, 7d/30d fallback, invalid bootstrap 제외 테스트를 실행한다.
+- [x] star 감소/0 gain 제외와 score 수치 테스트를 실행한다.
+- [x] score 동점, gain 동점, 최종 `github_id` 동점 해소 테스트를 실행한다.
+- [x] 94.99%, 95%, 100%, 분모 0 publication 판정 테스트를 실행한다.
+- [x] transaction 중 실패 시 직전 published run 유지 테스트를 실행한다.
+- [x] multi-topic category join 중복 제거 테스트를 실행한다.
 
 ### 실행 기록
 
-- 미실행
+- 2026-10-11: 실제 snapshot의 `captured_at` 기준 24h/7d/30d target과 최대 6시간 허용 오차를 적용하는 ranking domain을 추가. 실제 baseline을 우선하고 7d/30d만 bootstrap 추정 fallback을 허용하며, 양의 gain과 PRD score/정렬 규칙을 구현.
+- 2026-10-11: tracking 종료 직후 성공률을 정수 산술로 판정하고 ranking 전체 삽입과 `published_at` 갱신을 단일 transaction으로 수행하도록 연결. 95% 미만·분모 0·실행 자체 실패는 공개하지 않으며, 공개 transaction 실패 후 동일 slot 재실행은 GitHub 재호출 없이 공개만 재시도 가능하게 구성.
+- 2026-10-11: category topic 관계는 `EXISTS` join으로 조회해 여러 matching topic을 가진 repository도 한 번만 반환하고 `score DESC → star_gain DESC → github_id ASC` 순서를 고정.
+- 2026-10-11: baseline 경계, bootstrap 제한/우선순위, gain/score/동점, 94.99%/95%/100%/분모 0, exact-95% partial 공개, transaction rollback, multi-topic 중복 제거 테스트 추가. `TEST_DATABASE_URL=... uv run pytest` — 112 passed, live 1 skipped.
+- 2026-10-11: `uv run ruff check .`, `uv run mypy`, `git diff --check` — 모두 통과. Phase 9 완료, 요청에 따라 Phase 10은 시작하지 않음.
 
 ## Phase 10 — FastAPI 읽기 전용 API
 

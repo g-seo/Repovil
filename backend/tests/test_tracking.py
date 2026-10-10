@@ -203,6 +203,8 @@ def test_success_stores_actual_snapshot_and_updates_renamed_metadata_and_topics(
 
     assert (result.status, result.total_count) == ("COMPLETED", 1)
     assert (result.success_count, result.failed_count, result.skipped_count) == (1, 0, 0)
+    assert result.published_at == NOW
+    assert result.ranking_count == 0
     assert result.scheduled_at == SLOT
     assert client.stats_calls == [("new-owner", "new-name")]
     with psycopg.connect(tracking_database_url) as connection:
@@ -263,6 +265,7 @@ def test_duplicate_schedule_slot_returns_finished_run_without_new_calls_or_snaps
 
     assert second.run_id == first.run_id
     assert second.already_finished is True
+    assert second.published_at == NOW
     assert client.metadata_calls == [("owner", "repo-101")]
     with psycopg.connect(tracking_database_url) as connection:
         assert connection.execute("SELECT count(*) FROM tracking_runs").fetchone() == (1,)

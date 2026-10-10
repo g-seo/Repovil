@@ -46,6 +46,7 @@ Run discovery and then bootstrap newly discovered repositories before tracking:
 ```bash
 uv run repovil-discovery
 uv run repovil-bootstrap
+uv run repovil-tracking
 ```
 
 ## Quality checks

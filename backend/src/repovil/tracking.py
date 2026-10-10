@@ -21,6 +21,7 @@ from repovil.github_client import (
     RepositoryStats,
     RequestMetadata,
 )
+from repovil.ranking import publish_rankings
 from repovil.settings import get_settings
 from repovil.worker import create_github_client
 
@@ -69,6 +70,8 @@ class TrackingRunResult:
     success_count: int
     failed_count: int
     skipped_count: int
+    published_at: datetime | None
+    ranking_count: int
     already_finished: bool = False
 
 
@@ -174,7 +177,9 @@ def _run_result(
 ) -> TrackingRunResult:
     row = connection.execute(
         """
-        SELECT scheduled_at, status, total_count, success_count, failed_count, skipped_count
+        SELECT scheduled_at, status, total_count, success_count, failed_count, skipped_count,
+               published_at,
+               (SELECT count(*) FROM rankings WHERE tracking_run_id = tracking_runs.id)
         FROM tracking_runs
         WHERE id = %s
         """,
@@ -190,6 +195,8 @@ def _run_result(
         success_count=cast(int, row[3]),
         failed_count=cast(int, row[4]),
         skipped_count=cast(int, row[5]),
+        published_at=(cast(datetime, row[6]).astimezone(UTC) if row[6] is not None else None),
+        ranking_count=cast(int, row[7]),
         already_finished=already_finished,
     )
 
@@ -754,6 +761,11 @@ def run_tracking(
                 initial_time,
             )
             if already_finished:
+                publish_rankings(
+                    connection,
+                    run_id,
+                    _as_utc(clock(), label="tracking clock"),
+                )
                 return _run_result(connection, run_id, already_finished=True)
 
             active_topics = _active_topics(connection)
@@ -771,20 +783,32 @@ def run_tracking(
                     )
                 except _HandledFailure:
                     continue
-            return _finish_run(
+            _finish_run(
                 connection,
                 run_id,
                 _as_utc(clock(), label="tracking clock"),
             )
+            publish_rankings(
+                connection,
+                run_id,
+                _as_utc(clock(), label="tracking clock"),
+            )
+            return _run_result(connection, run_id)
         except Exception as error:
             if run_id is not None:
-                _fail_pending_items(connection, run_id, error)
-                _finish_run(
-                    connection,
-                    run_id,
-                    _as_utc(clock(), label="tracking clock"),
-                    force_failed=True,
-                )
+                connection.rollback()
+                status_row = connection.execute(
+                    "SELECT status FROM tracking_runs WHERE id = %s",
+                    (run_id,),
+                ).fetchone()
+                if status_row == ("RUNNING",):
+                    _fail_pending_items(connection, run_id, error)
+                    _finish_run(
+                        connection,
+                        run_id,
+                        _as_utc(clock(), label="tracking clock"),
+                        force_failed=True,
+                    )
             raise
         finally:
             connection.rollback()
@@ -815,8 +839,13 @@ def main(argv: Sequence[str] | None = None) -> None:
         scheduled_at=arguments.scheduled_at,
     )
     suffix = " (already finished)" if result.already_finished else ""
+    publication = (
+        f", published {result.ranking_count} rankings"
+        if result.published_at is not None
+        else ", not published"
+    )
     print(
         f"Tracking run {result.run_id} {result.status}{suffix}: "
         f"{result.success_count} succeeded, {result.failed_count} failed, "
-        f"{result.skipped_count} skipped"
+        f"{result.skipped_count} skipped{publication}"
     )
