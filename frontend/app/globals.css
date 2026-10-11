@@ -187,6 +187,8 @@ footer {
 .filter-link:focus-visible,
 .repository-name:focus-visible,
 .github-link:focus-visible,
+.detail-breadcrumb a:focus-visible,
+.detail-github-link:focus-visible,
 .page-link:focus-visible,
 .retry-button:focus-visible,
 .wordmark:focus-visible {
@@ -486,6 +488,267 @@ footer {
   color: var(--muted);
 }
 
+.state-link {
+  text-decoration: none;
+}
+
+.detail-breadcrumb {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+  padding-top: 34px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.detail-breadcrumb a:hover {
+  color: var(--blue);
+}
+
+.detail-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.55fr);
+  gap: clamp(2rem, 7vw, 7rem);
+  padding: 72px 0 68px;
+  border-bottom: 1px solid var(--ink);
+}
+
+.detail-title h1 {
+  margin: 0.25rem 0 1.2rem;
+  overflow-wrap: anywhere;
+  font-size: clamp(2.8rem, 7vw, 6rem);
+  font-weight: 780;
+  letter-spacing: -0.065em;
+  line-height: 0.95;
+}
+
+.detail-title h1 span {
+  color: var(--muted);
+  font-weight: 430;
+}
+
+.detail-description {
+  max-width: 680px;
+  margin: 0 0 1.4rem;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.repository-status {
+  padding: 0.17rem 0.42rem;
+  border: 1px dashed var(--signal-dark);
+  border-radius: 3px;
+  color: var(--signal-dark);
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.detail-facts {
+  align-self: end;
+}
+
+.detail-facts dl {
+  margin: 0 0 1.2rem;
+  border-top: 1px solid var(--line);
+}
+
+.detail-facts dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.72rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.detail-facts dt {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.detail-facts dd {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+  font-weight: 750;
+  text-align: right;
+}
+
+.detail-github-link {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  border-radius: 3px;
+  background: var(--ink);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.detail-github-link:hover {
+  background: var(--blue);
+}
+
+.history-section {
+  padding: 58px 0 82px;
+}
+
+.history-figure {
+  margin: 0;
+}
+
+.history-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 24px;
+}
+
+.history-heading h2 {
+  margin: 0;
+  font-size: clamp(1.7rem, 4vw, 2.8rem);
+  letter-spacing: -0.045em;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem 1.2rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.chart-legend span {
+  display: inline-flex;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.legend-line {
+  display: inline-block;
+  width: 26px;
+  border-top: 3px solid var(--blue);
+}
+
+.legend-line.estimated {
+  border-top-color: var(--signal-dark);
+  border-top-style: dashed;
+}
+
+.chart-scroll {
+  overflow-x: auto;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.star-chart {
+  display: block;
+  min-width: 680px;
+  width: 100%;
+  height: auto;
+}
+
+.chart-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.chart-axis-label {
+  fill: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+}
+
+.chart-segment {
+  fill: none;
+  stroke: var(--blue);
+  stroke-linecap: round;
+  stroke-width: 3;
+}
+
+.chart-segment.estimated {
+  stroke: var(--signal-dark);
+  stroke-dasharray: 7 6;
+}
+
+.chart-point {
+  stroke: var(--panel);
+  stroke-width: 2;
+}
+
+.chart-point.actual {
+  fill: var(--blue);
+}
+
+.chart-point.estimated {
+  fill: var(--signal-dark);
+}
+
+.history-figure figcaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  padding-top: 14px;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.history-figure figcaption span:last-child {
+  max-width: 520px;
+  text-align: right;
+}
+
+.history-empty {
+  display: grid;
+  justify-items: center;
+  min-height: 350px;
+  padding: 70px 20px;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--line);
+  text-align: center;
+}
+
+.history-empty .status-mark {
+  display: grid;
+  width: 62px;
+  height: 62px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--signal);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 900;
+}
+
+.history-empty h2 {
+  margin: 1rem 0 0;
+}
+
+.history-empty p {
+  margin: 0.4rem 0 0;
+  color: var(--muted);
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -525,6 +788,15 @@ footer {
     grid-column: 2;
     max-width: 420px;
     text-align: left;
+  }
+
+  .detail-hero {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  .detail-facts {
+    max-width: 520px;
   }
 }
 
@@ -594,5 +866,31 @@ footer {
   .page-position {
     font-size: 0.68rem;
     text-align: center;
+  }
+
+  .detail-breadcrumb {
+    padding-top: 24px;
+  }
+
+  .detail-hero {
+    padding: 48px 0 52px;
+  }
+
+  .history-heading,
+  .history-figure figcaption {
+    display: block;
+  }
+
+  .chart-legend {
+    margin-top: 0.8rem;
+  }
+
+  .history-figure figcaption span {
+    display: block;
+  }
+
+  .history-figure figcaption span:last-child {
+    margin-top: 0.5rem;
+    text-align: left;
   }
 }

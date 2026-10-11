@@ -596,32 +596,37 @@ npm run build
 
 **선행 조건:** Phase 11
 
+**상태:** `[x]` — 2026-10-11 완료
+
 ### 구현 항목
 
-- [ ] owner/name route의 상세 metadata와 GitHub link를 구현한다.
-- [ ] 최근 30일 star graph를 구현한다.
-- [ ] 실제 snapshot과 bootstrap 추정 point를 색상/선 스타일/범례 등 시각적으로 구분한다.
-- [ ] 30일 경계, 일부 데이터, 전부 실제, 실제+추정 혼합, 빈 history 상태를 처리한다.
-- [ ] graph에 접근 가능한 label/summary와 추정치 설명을 제공한다.
-- [ ] rename 이후 현재 route가 동작하도록 API의 현재 metadata를 사용한다.
+- [x] owner/name route의 상세 metadata와 GitHub link를 구현한다.
+- [x] 최근 30일 star graph를 구현한다.
+- [x] 실제 snapshot과 bootstrap 추정 point를 색상/선 스타일/범례 등 시각적으로 구분한다.
+- [x] 30일 경계, 일부 데이터, 전부 실제, 실제+추정 혼합, 빈 history 상태를 처리한다.
+- [x] graph에 접근 가능한 label/summary와 추정치 설명을 제공한다.
+- [x] rename 이후 현재 route가 동작하도록 API의 현재 metadata를 사용한다.
 
 ### 완료 조건
 
-- [ ] 사용자가 실제값과 추정값을 혼동하지 않고 구분할 수 있다.
-- [ ] 최근 30일 밖의 점은 표시하지 않는다.
-- [ ] bootstrap 누락 또는 일부 수집 실패가 page 전체 오류를 만들지 않는다.
+- [x] 사용자가 실제값과 추정값을 혼동하지 않고 구분할 수 있다.
+- [x] 최근 30일 밖의 점은 표시하지 않는다.
+- [x] bootstrap 누락 또는 일부 수집 실패가 page 전체 오류를 만들지 않는다.
 
 ### 테스트 방법
 
-- [ ] actual-only, estimated-only, mixed, empty fixture component test를 실행한다.
-- [ ] 30일 경계와 actual 우선 표시 테스트를 실행한다.
-- [ ] 상세 not-found와 API 오류 상태 테스트를 실행한다.
-- [ ] frontend lint, type check, production build를 실행한다.
-- [ ] graph 범례와 접근성을 수동 검증한다.
+- [x] actual-only, estimated-only, mixed, empty fixture component test를 실행한다.
+- [x] 30일 경계와 actual 우선 표시 테스트를 실행한다.
+- [x] 상세 not-found와 API 오류 상태 테스트를 실행한다.
+- [x] frontend lint, type check, production build를 실행한다.
+- [x] graph 범례와 접근성을 수동 검증한다.
 
 ### 실행 기록
 
-- 미실행
+- 2026-10-11: `/repositories/{owner}/{name}` Next.js 상세 route를 추가. FastAPI의 현재 metadata를 사용해 rename/transfer 이후 identity, 설명, star 수, 언어/category/status, 발견·tracking 시각과 GitHub 링크를 표시하고 API 404를 전용 not-found 상태로 분리.
+- 2026-10-11: 의존성 없는 server-rendered SVG 30일 star graph를 구현. actual은 파란 실선, bootstrap estimate는 녹색 점선과 개별 point/범례로 구분하고, 30일 범위 방어 검증·동일 날짜 actual 우선·빈 history를 처리. 화면 요약, SVG title/description, 점별 title과 screen-reader용 데이터 표 및 추정 한계 설명을 추가.
+- 2026-10-11: actual-only/estimated-only/mixed/empty, 30일 inclusive 경계·범위 밖 제외·actual 우선, 현재 rename metadata, API loading/error/not-found와 read-only fetch 테스트 추가. `npm test` — 18 passed. `npm run lint`, `npm run typecheck`, `npm run build`, `git diff --check` — 모두 통과.
+- 2026-10-11: production build와 mock read-only API를 연결해 Chromium 1440x1000/390x844에서 상세 route HTTP 200, actual/estimated 범례, 16개 graph point, 접근성 label 연결과 문서 가로 overflow 없음 확인. Phase 12 완료, 요청에 따라 Phase 13은 시작하지 않음.
 
 ## Phase 13 — Railway 운영 구성과 관찰 가능성
 

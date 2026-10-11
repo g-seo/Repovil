@@ -35,6 +35,40 @@ export type RankingsResponse = {
   };
 };
 
+export type Repository = {
+  github_id: number;
+  owner: string;
+  name: string;
+  description: string | null;
+  github_url: string;
+  language: string | null;
+  current_stars: number;
+  status: "bootstrap_pending" | "active" | "inactive";
+  discovered_at: string;
+  tracking_started_at: string | null;
+  categories: Category[];
+};
+
+export type StarHistoryPoint = {
+  captured_at: string;
+  star_count: number;
+  is_estimated: boolean;
+};
+
+export type StarHistoryResponse = {
+  github_id: number;
+  owner: string;
+  name: string;
+  points: StarHistoryPoint[];
+};
+
+export class ApiError extends Error {
+  constructor(public readonly status: number) {
+    super(`Repovil API request failed with status ${status}`);
+    this.name = "ApiError";
+  }
+}
+
 const DEFAULT_API_URL = "http://127.0.0.1:8000";
 
 function apiUrl(path: string): string {
@@ -48,7 +82,7 @@ async function getJson<T>(path: string): Promise<T> {
     headers: { Accept: "application/json" },
   });
   if (!response.ok) {
-    throw new Error(`Repovil API request failed with status ${response.status}`);
+    throw new ApiError(response.status);
   }
   return (await response.json()) as T;
 }
@@ -66,4 +100,16 @@ export function fetchRankings(query: RankingQuery): Promise<RankingsResponse> {
     parameters.set("category", query.category);
   }
   return getJson<RankingsResponse>(`rankings?${parameters.toString()}`);
+}
+
+function repositoryPath(owner: string, name: string): string {
+  return `repositories/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`;
+}
+
+export function fetchRepository(owner: string, name: string): Promise<Repository> {
+  return getJson<Repository>(repositoryPath(owner, name));
+}
+
+export function fetchStarHistory(owner: string, name: string): Promise<StarHistoryResponse> {
+  return getJson<StarHistoryResponse>(`${repositoryPath(owner, name)}/star-history`);
 }
