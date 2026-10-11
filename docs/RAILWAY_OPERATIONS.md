@@ -58,6 +58,7 @@ API port는 private reference를 안정적으로 조합하기 위해 IaC에서 `
 1. PostgreSQL backup/PITR 상태와 새 migration의 forward/backward smoke 결과를 확인한다.
 2. IaC는 프로젝트 전체를 함께 적용하므로 다음 cron slot 직전에는 release하지 않는다. API migration과 readiness를 확인할 시간이 충분한 slot 직후에 plan/apply한다.
 3. API pre-deploy는 `repovil-deploy-check api`, `alembic upgrade head`, `repovil-sync-categories` 순서로 실행된다. 실패하면 새 API process가 시작되지 않는다. 로그를 확인하고 원인을 수정하며 production DB에서 임의 downgrade하지 않는다.
+   Dockerfile 기반 service의 custom command는 exec form으로 실행되므로, 여러 명령을 연결하는 API와 Cron command는 IaC에서 명시적으로 `/bin/sh -c`로 감싼다.
 4. Worker image도 함께 build될 수 있지만 cron process는 예약 시각에만 시작한다. 새 migration은 직전 application image와도 호환되게 작성해 build/deploy 경합 중 schema 호환성을 유지한다.
 5. 다음 cron slot 전에 `/health`가 HTTP 200인지 확인하고 `/ready`가 DB 연결을 포함해 HTTP 200인지 확인한다. Railway deployment healthcheck는 `/ready`다.
 6. Web page와 worker variable 설정을 확인하고, 첫 cron 실행의 JSON log와 종료 상태를 관찰한다.

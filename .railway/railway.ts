@@ -35,12 +35,12 @@ export default defineRailway((ctx, project) => {
     ]),
     deploy: {
       preDeployCommand: [
-        "repovil-deploy-check api && alembic upgrade head && repovil-sync-categories",
+        '/bin/sh -c "repovil-deploy-check api && alembic upgrade head && exec repovil-sync-categories"',
       ],
-      startCommand: "repovil-deploy-check api && repovil-api",
+      startCommand:
+        '/bin/sh -c "repovil-deploy-check api && exec repovil-api"',
       healthcheckPath: "/ready",
       healthcheckTimeout: 60,
-      restartPolicyType: "ON_FAILURE",
       restartPolicyMaxRetries: 3,
     },
     env: {
@@ -65,7 +65,6 @@ export default defineRailway((ctx, project) => {
       startCommand: "/bin/sh /app/start-web.sh",
       healthcheckPath: "/",
       healthcheckTimeout: 60,
-      restartPolicyType: "ON_FAILURE",
       restartPolicyMaxRetries: 3,
     },
     env: {
@@ -85,7 +84,8 @@ export default defineRailway((ctx, project) => {
       ".railway/railway.ts",
     ]),
     deploy: {
-      startCommand: "repovil-deploy-check worker && repovil-daily",
+      startCommand:
+        '/bin/sh -c "repovil-deploy-check worker && exec repovil-daily"',
       cronSchedule: "0 3 * * *",
       restartPolicyType: "NEVER",
     },
@@ -107,7 +107,8 @@ export default defineRailway((ctx, project) => {
       ".railway/railway.ts",
     ]),
     deploy: {
-      startCommand: "repovil-deploy-check worker && repovil-tracking",
+      startCommand:
+        '/bin/sh -c "repovil-deploy-check worker && exec repovil-tracking"',
       cronSchedule: "0 */6 * * *",
       restartPolicyType: "NEVER",
     },

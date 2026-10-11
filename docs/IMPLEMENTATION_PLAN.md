@@ -634,7 +634,7 @@ npm run build
 
 **선행 조건:** Phase 12
 
-**상태:** `[!]` — 2026-10-11 local 구현·검증 완료, 실제 Railway staging smoke는 배포 승인과 연결된 project credential 필요
+**상태:** `[!]` — 2026-10-11 Railway staging API/web smoke 완료, 첫 scheduled tracking/daily 실행 확인 대기
 
 ### 구현 항목
 
@@ -672,6 +672,8 @@ npm run build
 - 2026-10-11: `docker build`로 backend/web production image를 빌드. backend image에서 Alembic upgrade와 category sync, 빈 대상 tracking command 성공, `PORT=4567` API `/health`·`/ready` HTTP 200, 잘못된 DB에서 `/ready` HTTP 503 확인. web standalone image를 API에 연결해 `/` HTTP 200 확인. backend/web 필수 variable 누락 시 JSON 오류와 exit 1 확인.
 - 2026-10-11: `TEST_DATABASE_URL=... uv run pytest` — 131 passed, GitHub live 1 skipped. Railway IaC graph test 3 passed. `uv run ruff check .`, `uv run mypy`, frontend `npm test` — 18 passed, `npm run lint`, `npm run typecheck`, `npm run build`, root `npm audit`, `git diff --check`, secret pattern scan 통과.
 - 2026-10-11: GitHub 연동 이후에도 실제 Railway staging plan/apply/smoke는 실행하지 않음. 외부 리소스 생성과 배포는 사용자가 plan을 검토하고 승인해야 하므로 Phase 13을 `[!]`로 유지하며 Phase 14는 시작하지 않음.
+- 2026-10-11: 승인된 staging plan(`5 add / 0 change / 0 destroy`)을 적용해 PostgreSQL과 API/web/daily/tracking service를 생성. Dockerfile service의 custom command가 exec form으로 실행되어 `&&` 뒤 명령이 시작되지 않는 실제 배포 실패를 확인하고, API pre-deploy/start와 두 Cron start를 명시적 `/bin/sh -c`로 수정한 뒤 IaC type check와 graph test 3개를 통과시킴.
+- 2026-10-11: 수정 plan(`0 add / 4 change / 0 destroy`)을 staging에 적용. Alembic migration 2개와 category sync(6 categories, 21 topics)가 성공하고 네 service deployment가 모두 `SUCCESS`가 됨. API/web public domain을 생성해 API `/health`, `/ready`, `/categories`와 web `/` HTTP 200을 확인. Railway가 API/web의 기본 `ON_FAILURE` restart policy를 저장 시 기본값으로 정규화해 반복 drift로 표시하므로, 동일 동작의 platform default를 사용하고 Cron의 `NEVER`만 명시적으로 유지. 실제 scheduled command 종료 검증은 tracking의 2026-10-11 12:00 UTC 첫 실행과 daily의 2026-10-12 03:00 UTC 첫 실행 후 확인해야 하므로 Phase 13은 `[!]`로 유지.
 
 ## Phase 14 — MVP 통합 인수 검증
 
