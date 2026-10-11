@@ -1,0 +1,20 @@
+{
+  "name": "repovil-infrastructure",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "iac:check": "tsc --project .railway/tsconfig.json",
+    "iac:test": "node .railway/railway.test.mjs",
+    "railway:plan": "railway config plan",
+    "railway:apply": "railway config apply"
+  },
+  "dependencies": {
+    "railway": "3.13.1"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
+  }
+}

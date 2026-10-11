@@ -40,3 +40,11 @@ def test_github_client_settings_can_be_injected_without_exposing_token(
     assert settings.github_api_timeout_seconds == 12.5
     assert settings.github_api_max_retries == 2
 
+
+def test_railway_port_can_be_injected(monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setenv("PORT", "4567")
+
+    settings = Settings()
+
+    assert settings.port == 4567
+

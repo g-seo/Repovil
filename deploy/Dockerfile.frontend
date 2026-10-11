@@ -1,0 +1,25 @@
+# syntax=docker/dockerfile:1
+FROM node:24-alpine AS dependencies
+WORKDIR /app
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+
+FROM node:24-alpine AS builder
+WORKDIR /app
+COPY --from=dependencies /app/node_modules ./node_modules
+COPY frontend ./
+RUN npm run build
+
+FROM node:24-alpine AS runtime
+WORKDIR /app
+ENV NODE_ENV=production \
+    HOSTNAME=0.0.0.0 \
+    PORT=3000 \
+    TZ=UTC
+
+COPY --from=builder --chown=node:node /app/.next/standalone ./
+COPY --from=builder --chown=node:node /app/.next/static ./.next/static
+COPY --chown=node:node deploy/start-web.sh /app/start-web.sh
+
+USER node
+CMD ["/bin/sh", "/app/start-web.sh"]

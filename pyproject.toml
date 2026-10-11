@@ -25,6 +25,8 @@ repovil-sync-categories = "repovil.category_sync:main"
 repovil-discovery = "repovil.discovery:main"
 repovil-bootstrap = "repovil.bootstrap:main"
 repovil-tracking = "repovil.tracking:main"
+repovil-daily = "repovil.operations:main"
+repovil-deploy-check = "repovil.deployment:main"
 
 [dependency-groups]
 dev = [

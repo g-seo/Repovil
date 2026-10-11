@@ -24,6 +24,7 @@ from repovil.github_client import (
     StarHistoryPage,
     StarHistoryWeek,
 )
+from repovil.observability import configure_logging
 from repovil.settings import get_settings
 from repovil.worker import create_github_client
 
@@ -447,13 +448,22 @@ def run_bootstrap(
     )
 
 
-def main(argv: Sequence[str] | None = None) -> None:
+def main(argv: Sequence[str] | None = None) -> int:
     """Run historical bootstrap for all pending repositories."""
+    configure_logging()
     parser = argparse.ArgumentParser(description="Bootstrap repository star history")
     parser.parse_args(argv)
-    settings = get_settings()
-    result = run_bootstrap(str(settings.database_url), create_github_client(settings))
+    try:
+        settings = get_settings()
+        result = run_bootstrap(str(settings.database_url), create_github_client(settings))
+    except Exception as error:
+        logger.exception(
+            "bootstrap_job_failed",
+            extra={"error_type": type(error).__name__},
+        )
+        return 1
     print(
         f"Bootstrap processed {result.processed_count}: "
         f"{result.success_count} completed, {result.failed_count} failed"
     )
+    return int(result.failed_count > 0)

@@ -53,6 +53,25 @@ uv run repovil-bootstrap
 uv run repovil-tracking
 ```
 
+The Railway daily cron runs discovery and bootstrap as one observable command:
+
+```bash
+uv run repovil-daily
+```
+
+Production images, project-wide Railway IaC, release ordering, environment variables,
+and manual retry procedures are documented in
+[`docs/RAILWAY_OPERATIONS.md`](docs/RAILWAY_OPERATIONS.md).
+
+Validate the Railway IaC locally before planning changes against Railway:
+
+```bash
+npm ci
+npm run iac:check
+npm run iac:test
+railway config plan
+```
+
 ## Quality checks
 
 ```bash
@@ -63,6 +82,8 @@ npm --prefix frontend test
 npm --prefix frontend run lint
 npm --prefix frontend run typecheck
 npm --prefix frontend run build
+npm run iac:check
+npm run iac:test
 ```
 
 With PostgreSQL running, include the connection smoke test:

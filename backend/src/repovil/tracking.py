@@ -21,6 +21,7 @@ from repovil.github_client import (
     RepositoryStats,
     RequestMetadata,
 )
+from repovil.observability import configure_logging
 from repovil.ranking import publish_rankings
 from repovil.settings import get_settings
 from repovil.worker import create_github_client
@@ -809,6 +810,10 @@ def run_tracking(
                         _as_utc(clock(), label="tracking clock"),
                         force_failed=True,
                     )
+            logger.exception(
+                "tracking_run_failed",
+                extra={"run_id": run_id, "error_type": type(error).__name__},
+            )
             raise
         finally:
             connection.rollback()
@@ -827,17 +832,25 @@ def _parse_scheduled_at(value: str) -> datetime:
         raise argparse.ArgumentTypeError(str(error)) from error
 
 
-def main(argv: Sequence[str] | None = None) -> None:
+def main(argv: Sequence[str] | None = None) -> int:
     """Run repository tracking for the current or explicitly supplied UTC slot."""
+    configure_logging()
     parser = argparse.ArgumentParser(description="Track active GitHub repositories")
     parser.add_argument("--scheduled-at", type=_parse_scheduled_at, default=None)
     arguments = parser.parse_args(argv)
-    settings = get_settings()
-    result = run_tracking(
-        str(settings.database_url),
-        create_github_client(settings),
-        scheduled_at=arguments.scheduled_at,
-    )
+    try:
+        settings = get_settings()
+        result = run_tracking(
+            str(settings.database_url),
+            create_github_client(settings),
+            scheduled_at=arguments.scheduled_at,
+        )
+    except Exception as error:
+        logger.exception(
+            "tracking_job_failed",
+            extra={"error_type": type(error).__name__},
+        )
+        return 1
     suffix = " (already finished)" if result.already_finished else ""
     publication = (
         f", published {result.ranking_count} rankings"
@@ -849,3 +862,4 @@ def main(argv: Sequence[str] | None = None) -> None:
         f"{result.success_count} succeeded, {result.failed_count} failed, "
         f"{result.skipped_count} skipped{publication}"
     )
+    return 0 if result.status == "COMPLETED" else 1

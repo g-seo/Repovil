@@ -15,6 +15,7 @@ from psycopg import Connection
 from pydantic import BaseModel, ConfigDict
 
 from repovil.db import check_connection, connect_database
+from repovil.observability import configure_logging
 from repovil.settings import Settings, get_settings
 
 PAGE_SIZE = 20
@@ -500,6 +501,8 @@ app = create_app()
 
 
 def main() -> None:
-    """Run the API server for local development."""
-    uvicorn.run("repovil.api:app", host="0.0.0.0", port=8000)
+    """Run the API server on the local or Railway-provided port."""
+    configure_logging()
+    settings = get_settings()
+    uvicorn.run("repovil.api:app", host="0.0.0.0", port=settings.port)
 

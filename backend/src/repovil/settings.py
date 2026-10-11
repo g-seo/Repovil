@@ -2,7 +2,7 @@
 
 from functools import lru_cache
 
-from pydantic import NonNegativeInt, PositiveFloat, PostgresDsn, SecretStr
+from pydantic import Field, NonNegativeInt, PositiveFloat, PostgresDsn, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     github_api_version: str = "2026-03-10"
     github_api_timeout_seconds: PositiveFloat = 10.0
     github_api_max_retries: NonNegativeInt = 3
+    port: int = Field(default=8000, ge=1, le=65_535)
 
 
 @lru_cache

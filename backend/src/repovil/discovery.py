@@ -18,6 +18,7 @@ from repovil.github_client import (
     Repository,
     SearchRepositoriesPage,
 )
+from repovil.observability import configure_logging
 from repovil.settings import get_settings
 from repovil.worker import create_github_client
 
@@ -592,29 +593,42 @@ def run_discovery(
                 added_count=added_count,
                 failed_ranges=result.failed_ranges,
             )
-        except Exception:
+        except Exception as error:
             if run_id is not None:
                 _finish_failed_run(connection, run_id, clock().astimezone(UTC))
+            logger.exception(
+                "discovery_run_failed",
+                extra={"run_id": run_id, "error_type": type(error).__name__},
+            )
             raise
         finally:
             connection.execute("SELECT pg_advisory_unlock(%s)", (DISCOVERY_LOCK_ID,))
             connection.commit()
 
 
-def main(argv: Sequence[str] | None = None) -> None:
+def main(argv: Sequence[str] | None = None) -> int:
     """Run daily discovery, optionally retrying one prior run's failed ranges."""
+    configure_logging()
     parser = argparse.ArgumentParser(description="Discover eligible GitHub repositories")
     parser.add_argument("--retry-run", type=int, default=None)
     arguments = parser.parse_args(argv)
-    settings = get_settings()
-    result = run_discovery(
-        str(settings.database_url),
-        create_github_client(settings),
-        retry_run_id=arguments.retry_run,
-    )
+    try:
+        settings = get_settings()
+        result = run_discovery(
+            str(settings.database_url),
+            create_github_client(settings),
+            retry_run_id=arguments.retry_run,
+        )
+    except Exception as error:
+        logger.exception(
+            "discovery_job_failed",
+            extra={"error_type": type(error).__name__},
+        )
+        return 1
     print(
         f"Discovery run {result.run_id} {result.status}: "
         f"{result.discovered_count} discovered, {result.added_count} added, "
         f"{len(result.failed_ranges)} failed ranges"
     )
+    return 0 if result.status == "COMPLETED" else 1
 

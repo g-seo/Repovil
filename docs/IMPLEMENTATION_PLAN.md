@@ -634,35 +634,44 @@ npm run build
 
 **선행 조건:** Phase 12
 
+**상태:** `[!]` — 2026-10-11 local 구현·검증 완료, 실제 Railway staging smoke는 배포 승인과 연결된 project credential 필요
+
 ### 구현 항목
 
-- [ ] Railway의 web/API service와 동일 backend codebase의 worker entry point를 구성한다.
-- [ ] daily discovery와 6시간 tracking/ranking을 별도 Railway Cron으로 구성한다.
-- [ ] deploy/release 시 Alembic migration 실행 순서와 실패 시 중단 절차를 문서화한다.
-- [ ] DB URL, GitHub token, API version 등 secret/config를 Railway 환경 변수로만 주입한다.
-- [ ] UTC schedule과 애플리케이션 UTC 설정을 명시한다.
-- [ ] `run_id`, `repository_id`, response status, retry count, duration을 포함한 구조화 로그를 구현한다.
-- [ ] 실패 run/구간의 안전한 수동 재실행 절차를 문서화한다.
-- [ ] health/readiness와 cron exit code가 Railway에서 실패를 식별하게 한다.
+- [x] Railway의 web/API service와 동일 backend codebase의 worker entry point를 구성한다.
+- [x] PostgreSQL과 네 service의 build/deploy/variable 관계를 단일 Railway IaC 파일로 선언하고 legacy Config as Code를 제거한다.
+- [x] daily discovery와 6시간 tracking/ranking을 별도 Railway Cron으로 구성한다.
+- [x] deploy/release 시 Alembic migration 실행 순서와 실패 시 중단 절차를 문서화한다.
+- [x] DB URL, GitHub token, API version 등 secret/config를 Railway 환경 변수로만 주입한다.
+- [x] UTC schedule과 애플리케이션 UTC 설정을 명시한다.
+- [x] `run_id`, `repository_id`, response status, retry count, duration을 포함한 구조화 로그를 구현한다.
+- [x] 실패 run/구간의 안전한 수동 재실행 절차를 문서화한다.
+- [x] health/readiness와 cron exit code가 Railway에서 실패를 식별하게 한다.
 
 ### 완료 조건
 
-- [ ] 중복 cron 실행이 DB guard에 의해 차단된다.
-- [ ] worker 실패가 published ranking을 손상시키지 않고 non-zero exit/log로 관찰된다.
-- [ ] secret이 repository, image, log에 노출되지 않는다.
-- [ ] 운영자가 discovery 실패 구간과 tracking partial failure를 run id로 추적할 수 있다.
+- [x] 중복 cron 실행이 DB guard에 의해 차단된다.
+- [x] worker 실패가 published ranking을 손상시키지 않고 non-zero exit/log로 관찰된다.
+- [x] secret이 repository, image, log에 노출되지 않는다.
+- [x] 운영자가 discovery 실패 구간과 tracking partial failure를 run id로 추적할 수 있다.
 
 ### 테스트 방법
 
 - [ ] Railway와 동일한 command로 API, discovery, tracking을 staging에서 smoke test한다.
-- [ ] 동일 scheduled slot 동시 실행 테스트를 수행한다.
-- [ ] 의도적 부분 실패에서 exit/status/log/published ranking 유지 여부를 확인한다.
-- [ ] migration, health, readiness, 환경 변수 누락 실패를 확인한다.
-- [ ] secret scan과 로그 redaction 점검을 수행한다.
+- [x] 동일 scheduled slot 동시 실행 테스트를 수행한다.
+- [x] 의도적 부분 실패에서 exit/status/log/published ranking 유지 여부를 확인한다.
+- [x] migration, health, readiness, 환경 변수 누락 실패를 확인한다.
+- [x] secret scan과 로그 redaction 점검을 수행한다.
 
 ### 실행 기록
 
-- 미실행
+- 2026-10-11: backend/web multi-stage Docker image와 API/web/daily/tracking 배포 설정을 추가. Daily는 `0 3 * * *`, tracking/ranking은 `0 */6 * * *` UTC cron이며, daily command는 discovery 실패를 보존하면서 pending bootstrap도 시도하도록 구성.
+- 2026-10-11: Railway `PORT`, 필수 variable 선검증, 한 줄 JSON logging과 허용 필드 기반 secret 차단을 구현. Discovery `PARTIAL`/`FAILED`, bootstrap repository 실패, tracking `PARTIAL`/`FAILED`를 non-zero exit로 노출하고 기존 DB status 및 95% 원자적 공개 정책은 변경하지 않음.
+- 2026-10-11: `docs/RAILWAY_OPERATIONS.md`에 migration-first release, health/readiness, UTC, secret/reference variable, rollback, run id 조회 및 discovery/bootstrap/tracking 수동 재실행 절차를 기록.
+- 2026-10-11: 종료 예정인 service별 Railway Config as Code를 제거하고 `.railway/railway.ts` 단일 IaC로 PostgreSQL, API, web, daily, tracking의 source/build/deploy/reference variable을 선언. `railway` SDK 3.13.1을 고정하고 타입 검사와 3개 리소스 그래프 테스트를 추가했으며, staging plan/apply 순서를 운영 문서에 기록.
+- 2026-10-11: `docker build`로 backend/web production image를 빌드. backend image에서 Alembic upgrade와 category sync, 빈 대상 tracking command 성공, `PORT=4567` API `/health`·`/ready` HTTP 200, 잘못된 DB에서 `/ready` HTTP 503 확인. web standalone image를 API에 연결해 `/` HTTP 200 확인. backend/web 필수 variable 누락 시 JSON 오류와 exit 1 확인.
+- 2026-10-11: `TEST_DATABASE_URL=... uv run pytest` — 131 passed, GitHub live 1 skipped. Railway IaC graph test 3 passed. `uv run ruff check .`, `uv run mypy`, frontend `npm test` — 18 passed, `npm run lint`, `npm run typecheck`, `npm run build`, root `npm audit`, `git diff --check`, secret pattern scan 통과.
+- 2026-10-11: GitHub 연동 이후에도 실제 Railway staging plan/apply/smoke는 실행하지 않음. 외부 리소스 생성과 배포는 사용자가 plan을 검토하고 승인해야 하므로 Phase 13을 `[!]`로 유지하며 Phase 14는 시작하지 않음.
 
 ## Phase 14 — MVP 통합 인수 검증
 

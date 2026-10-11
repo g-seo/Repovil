@@ -4,6 +4,7 @@ Discovery, bootstrap, and tracking commands live in their dedicated worker modul
 """
 
 from repovil.github_client import GitHubClient
+from repovil.observability import configure_logging
 from repovil.settings import Settings, get_settings
 
 
@@ -20,6 +21,7 @@ def create_github_client(settings: Settings) -> GitHubClient:
 
 def main() -> None:
     """Load shared configuration and prove the worker entry point is runnable."""
+    configure_logging()
     get_settings()
     print("Repovil worker is ready")
 

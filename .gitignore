@@ -17,4 +17,6 @@ frontend/.next/
 frontend/coverage/
 frontend/node_modules/
 frontend/*.tsbuildinfo
+node_modules/
+.railway/config.json
 
