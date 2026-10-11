@@ -21,6 +21,10 @@ uv run uvicorn repovil.api:app --reload
 npm --prefix frontend run dev
 ```
 
+The Next.js server reads the FastAPI base URL from `REPOVIL_API_URL` (defaults to
+`http://127.0.0.1:8000`). Ranking requests are made server-side; the browser does not
+call GitHub or FastAPI directly.
+
 The generic worker entry point is a configuration smoke check; collection jobs use
 dedicated commands:
 

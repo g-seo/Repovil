@@ -554,34 +554,41 @@ npm run build
 
 **선행 조건:** Phase 10
 
+**상태:** `[x]` — 2026-10-11 완료
+
 ### 구현 항목
 
-- [ ] `All` 및 활성 category filter와 `24h | 7d | 30d` period filter를 구현한다.
-- [ ] URL query에 period/category/page 상태를 반영해 새로고침과 공유가 가능하게 한다.
-- [ ] 각 항목에 owner/name, 설명, star 수, growth score, star gain, 언어, category, GitHub link를 표시한다.
-- [ ] 20개 단위 pagination UI를 구현한다.
-- [ ] 공개 ranking 없음의 데이터 준비 중 상태와 정상 빈 결과를 구분한다.
-- [ ] 결과가 0개인 활성 category도 filter에서 유지한다.
-- [ ] loading, API error, retry 가능한 화면 상태와 기본 접근성을 구현한다.
+- [x] `All` 및 활성 category filter와 `24h | 7d | 30d` period filter를 구현한다.
+- [x] URL query에 period/category/page 상태를 반영해 새로고침과 공유가 가능하게 한다.
+- [x] 각 항목에 owner/name, 설명, star 수, growth score, star gain, 언어, category, GitHub link를 표시한다.
+- [x] 20개 단위 pagination UI를 구현한다.
+- [x] 공개 ranking 없음의 데이터 준비 중 상태와 정상 빈 결과를 구분한다.
+- [x] 결과가 0개인 활성 category도 filter에서 유지한다.
+- [x] loading, API error, retry 가능한 화면 상태와 기본 접근성을 구현한다.
 
 ### 완료 조건
 
-- [ ] 모든 filter 조합과 pagination이 API 계약과 일치한다.
-- [ ] 외부 GitHub link와 repository 상세 navigation이 동작한다.
-- [ ] 데이터 준비 중, 빈 결과, 오류가 서로 다른 사용자 상태로 표시된다.
-- [ ] 브라우저에서 GitHub API를 직접 호출하지 않는다.
+- [x] 모든 filter 조합과 pagination이 API 계약과 일치한다.
+- [x] 외부 GitHub link와 repository 상세 navigation이 동작한다.
+- [x] 데이터 준비 중, 빈 결과, 오류가 서로 다른 사용자 상태로 표시된다.
+- [x] 브라우저에서 GitHub API를 직접 호출하지 않는다.
 
 ### 테스트 방법
 
-- [ ] filter/query-string/pagination component test를 실행한다.
-- [ ] 0건 category, 준비 중, API 오류 rendering test를 실행한다.
-- [ ] 항목 필드와 link rendering test를 실행한다.
-- [ ] frontend lint, type check, production build를 실행한다.
-- [ ] desktop/mobile viewport에서 수동 smoke test를 실행한다.
+- [x] filter/query-string/pagination component test를 실행한다.
+- [x] 0건 category, 준비 중, API 오류 rendering test를 실행한다.
+- [x] 항목 필드와 link rendering test를 실행한다.
+- [x] frontend lint, type check, production build를 실행한다.
+- [x] desktop/mobile viewport에서 수동 smoke test를 실행한다.
 
 ### 실행 기록
 
-- 미실행
+- 2026-10-11: Next.js 서버 컴포넌트 기반 ranking 화면을 구현. `All`/활성 category와 24h/7d/30d filter, URL query 상태, 20개 pagination, repository/GitHub link, 공개 시각과 ranking 필드를 FastAPI 응답에 연결.
+- 2026-10-11: 준비 중·정상 빈 결과·loading·API error/retry 화면을 분리하고 skip link, navigation label, focus style, `aria-current`와 reduced-motion 처리를 추가. 서버 전용 `REPOVIL_API_URL` fetch로 브라우저의 FastAPI/GitHub 직접 호출을 방지.
+- 2026-10-11: filter/query/pagination, 0건 category, 준비 중/빈 결과/API 오류, 항목 필드/link, loading/retry 접근성 테스트 추가. `npm test` — 9 passed. `npm run lint`, `npm run typecheck`, `npm run build` — 모두 통과.
+- 2026-10-11: production server와 mock FastAPI를 기동해 `/?period=24h&category=skills&page=1`의 HTTP 200을 확인. Chromium 1440x1000/390x844 viewport에서 선택 filter, 6개 repository 카드, 상세 link, 가로 overflow 없음과 desktop/mobile screenshot을 수동 검토.
+- 2026-10-11: Docker PostgreSQL 연결 복구 후 integration과 read-only GitHub live smoke를 포함한 `TEST_DATABASE_URL=... GITHUB_LIVE_TEST=1 uv run pytest` — 122 passed, skipped 없음. `repovil-db-check` 연결 smoke도 통과.
+- 2026-10-11: Phase 11 완료. 요청에 따라 Phase 12는 시작하지 않음.
 
 ## Phase 12 — Repository 상세와 30일 star graph
 
