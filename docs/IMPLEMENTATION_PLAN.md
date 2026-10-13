@@ -689,35 +689,42 @@ npm run build
 
 **선행 조건:** Phase 13
 
+**상태:** `[~]` — 2026-10-13 로컬 PostgreSQL의 전체 자동 인수 검증 완료; refresh 변경의 Railway staging 배포 및 실제 24시간 snapshot 확인 대기
+
 ### 구현 항목
 
-- [ ] category sync → discovery → bootstrap → tracking → ranking publication → API → UI 전체 흐름을 실행한다.
-- [ ] 최소 24시간의 실제 snapshot이 필요한 24h ranking은 synthetic/integration fixture로 먼저 검증하고, staging에서는 시간이 쌓인 뒤 별도 확인한다.
-- [ ] 실제 6시간 schedule 여러 회차에서 snapshot이 보존되고 bootstrap이 실제 snapshot으로 대체되는 경로를 확인한다.
-- [ ] release checklist, rollback 절차, known limitation을 문서화한다.
-- [ ] `docs/IMPLEMENTATION_PLAN.md`의 모든 완료 항목과 실행 기록을 최종 갱신한다.
+- [x] category sync → discovery → bootstrap → tracking → ranking publication → API 전체 흐름을 빈 DB integration fixture로 실행하고, frontend 회귀 suite로 UI 계약을 함께 검증한다.
+- [~] 최소 24시간의 실제 snapshot이 필요한 24h ranking은 synthetic/integration fixture로 검증했다. refresh 변경을 staging에 배포한 뒤 실제 24시간 snapshot도 별도 확인한다.
+- [~] 로컬 fixture에서 두 실제 측정 시각의 snapshot 보존과 refresh 후 bootstrap 추정→실제 24h baseline 경로를 검증했다. staging의 여러 실제 6시간 schedule 확인이 남아 있다.
+- [x] release checklist, rollback 절차, known limitation을 `docs/MVP_RELEASE_CHECKLIST.md`와 운영 가이드에 문서화한다.
+- [x] 현재 완료 항목과 실행 기록을 갱신한다.
 
 ### 완료 조건
 
-- [ ] 매일 topic discovery가 신규 repository를 중복 없이 저장한다.
-- [ ] 6시간 tracking이 snapshot을 수집하고 과거 snapshot을 보존한다.
-- [ ] 24h/7d/30d ranking, category filter, pagination이 동작한다.
-- [ ] 신규 repository가 7d/30d 추정 ranking에 참여하고 24h는 실제 history가 있을 때만 참여한다.
-- [ ] 95% 미만 수집 실패가 직전 공개 ranking을 유지한다.
-- [ ] 사용자가 ranking과 repository별 30일 star 추이를 웹에서 조회한다.
-- [ ] 로그인, 알림, LLM 분류 등 MVP 제외 기능이 포함되지 않는다.
+- [x] 매일 topic discovery가 신규 repository를 중복 없이 저장한다.
+- [x] 6시간 tracking이 snapshot을 수집하고 과거 snapshot을 보존한다.
+- [x] 24h/7d/30d ranking, category filter, pagination이 동작한다.
+- [x] 신규 repository가 7d/30d 추정 ranking에 참여하고 24h는 실제 history가 있을 때만 참여한다.
+- [x] 95% 미만 수집 실패가 직전 공개 ranking을 유지한다.
+- [x] 사용자가 ranking과 repository별 30일 star 추이를 웹에서 조회한다.
+- [x] 로그인, 알림, LLM 분류 등 MVP 제외 기능이 포함되지 않는다.
 
 ### 테스트 방법
 
-- [ ] 전체 backend test, lint, type check를 실행한다.
-- [ ] 전체 frontend test, lint, type check, production build를 실행한다.
-- [ ] 빈 DB에서 migration과 seed 후 end-to-end flow를 실행한다.
-- [ ] duplicate discovery, search 분할/미완료, bootstrap, baseline, 동점/filter, partial failure, 95% 판정, rename/비활성화, API pagination 회귀 suite를 실행한다.
-- [ ] 실제/추정 graph 구분과 데이터 준비 중 상태를 수동 acceptance test한다.
+- [x] 전체 backend test, lint, type check를 실행한다.
+- [x] 전체 frontend test, lint, type check, production build를 실행한다.
+- [x] 빈 DB에서 migration과 seed 후 end-to-end flow를 실행한다.
+- [x] duplicate discovery, search 분할/미완료, bootstrap, baseline, 동점/filter, partial failure, 95% 판정, rename/비활성화, API pagination 회귀 suite를 실행한다.
+- [x] 실제/추정 graph 구분과 데이터 준비 중 상태를 component/UI acceptance regression으로 확인한다.
 
 ### 실행 기록
 
-- 미실행
+- 2026-10-13: `backend/tests/test_mvp_acceptance.py`를 추가. 빈 PostgreSQL schema에서 Alembic migration과 category sync 후, 21개 활성 topic discovery(반복 discovery의 `github_id` dedupe 포함), pending bootstrap, 첫 tracking publication, source-history refresh, 24시간 뒤 두 번째 tracking publication, FastAPI health/readiness/category/ranking/detail/history를 하나의 fixture로 검증했다. 24h는 실제 baseline, 7d/30d는 추정 baseline으로 구분됨을 확인했다.
+- 2026-10-13: 통합 fixture에서 발견한 다음 날 bootstrap source-history 공백을 수정. daily pipeline이 `--refresh-active`로 tracking 시작 후 30일 이내 active repository의 누락 provider 날짜만 보존하며, 이전 원천 row와 현재 star 값은 덮어쓰지 않는다. 이로써 실제 24h snapshot과 유효한 7d/30d bootstrap ranking이 같은 run에서 유지된다.
+- 2026-10-13: `docs/MVP_RELEASE_CHECKLIST.md`를 추가하고 운영 가이드에 refresh 동작을 반영. release 전/후 점검, rollback·incident 절차, Search 완전성·bootstrap 추정·24h history의 알려진 제한을 기록했다.
+- 2026-10-13: `TEST_DATABASE_URL=... uv run pytest` — 134 passed, GitHub live 1 skipped. `uv run ruff check .`, `uv run mypy` — 통과. Linux Node 24.21.0으로 `npm --prefix frontend test` — 18 passed, `lint`, `typecheck`, `build` 및 `npm run iac:check`, `npm run iac:test` — 모두 통과.
+- 2026-10-13: 빈 로컬 PostgreSQL public schema에서 `alembic upgrade head`, `repovil-sync-categories` 2회, `repovil-db-check`를 실행해 migration·seed idempotency와 DB 연결을 확인.
+- 남은 staging 확인: 이 worker refresh 변경을 승인된 Railway staging에 배포한 뒤 daily/tracking 다회 실행과 실제 24시간 24h baseline을 확인한다. 배포·외부 데이터 변경은 현재 요청에 포함되지 않아 수행하지 않았다.
 
 ## 5. PRD 요구사항 추적표
 

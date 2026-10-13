@@ -61,11 +61,12 @@ class BootstrapClient(Protocol):
 
 @dataclass(frozen=True, slots=True)
 class PendingRepository:
-    """A repository waiting for its one-time historical bootstrap."""
+    """A repository needing initial bootstrap or a bounded history refresh."""
 
     repository_id: int
     owner: str
     name: str
+    status: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -194,17 +195,27 @@ def calculate_bootstrap_baselines(
 
 def _pending_repositories(
     connection: Connection[tuple[object, ...]],
+    *,
+    refresh_active: bool,
+    refresh_cutoff: datetime,
 ) -> tuple[PendingRepository, ...]:
     rows = connection.execute(
         """
-        SELECT id, owner, name
+        SELECT id, owner, name, status
         FROM repositories
         WHERE status = 'bootstrap_pending'
+           OR (%s AND status = 'active' AND tracking_started_at >= %s)
         ORDER BY id
-        """
+        """,
+        (refresh_active, refresh_cutoff),
     ).fetchall()
     return tuple(
-        PendingRepository(cast(int, row[0]), cast(str, row[1]), cast(str, row[2]))
+        PendingRepository(
+            cast(int, row[0]),
+            cast(str, row[1]),
+            cast(str, row[2]),
+            cast(str, row[3]),
+        )
         for row in rows
     )
 
@@ -213,6 +224,9 @@ def _mark_attempt(
     connection: Connection[tuple[object, ...]],
     repository_id: int,
     attempted_at: datetime,
+    *,
+    refresh_active: bool,
+    refresh_cutoff: datetime,
 ) -> bool:
     row = connection.execute(
         """
@@ -220,10 +234,14 @@ def _mark_attempt(
         SET bootstrap_attempt_count = bootstrap_attempt_count + 1,
             bootstrap_last_attempted_at = %s,
             updated_at = CURRENT_TIMESTAMP
-        WHERE id = %s AND status = 'bootstrap_pending'
+        WHERE id = %s
+          AND (
+              status = 'bootstrap_pending'
+              OR (%s AND status = 'active' AND tracking_started_at >= %s)
+          )
         RETURNING id
         """,
-        (attempted_at, repository_id),
+        (attempted_at, repository_id, refresh_active, refresh_cutoff),
     ).fetchone()
     connection.commit()
     return row is not None
@@ -259,7 +277,7 @@ def _store_failure(
 def _complete_repository(
     connection: Connection[tuple[object, ...]],
     repository_id: int,
-    current_stars: int,
+    current_stars: int | None,
     fetched_at: datetime,
     daily_stars_created: Mapping[date, int],
 ) -> bool:
@@ -267,9 +285,10 @@ def _complete_repository(
         "SELECT status FROM repositories WHERE id = %s FOR UPDATE",
         (repository_id,),
     ).fetchone()
-    if status_row != ("bootstrap_pending",):
+    if status_row is None or status_row[0] not in {"bootstrap_pending", "active"}:
         connection.rollback()
         return False
+    status = status_row[0]
 
     earliest = fetched_at.date() - timedelta(days=BOOTSTRAP_HISTORY_DAYS - 1)
     recent_days = {
@@ -288,6 +307,12 @@ def _complete_repository(
             """,
             (repository_id, bucket_date, recent_days[bucket_date], fetched_at),
         )
+    if status == "active":
+        connection.commit()
+        return True
+
+    if current_stars is None:
+        raise RuntimeError("initial bootstrap requires a current star count")
     connection.execute(
         """
         UPDATE repositories
@@ -336,8 +361,9 @@ def run_bootstrap(
     client: BootstrapClient,
     *,
     clock: Callable[[], datetime] = lambda: datetime.now(UTC),
+    refresh_active: bool = False,
 ) -> BootstrapRunResult:
-    """Fetch and preserve bootstrap history for every currently pending repository."""
+    """Bootstrap pending repositories and optionally extend recent source history."""
     with connect_database(database_url) as connection:
         lock_row = connection.execute(
             "SELECT pg_try_advisory_lock(%s)",
@@ -350,15 +376,30 @@ def run_bootstrap(
         failures: list[BootstrapFailure] = []
         processed_count = 0
         try:
-            repositories = _pending_repositories(connection)
+            refresh_cutoff = _utc(clock) - timedelta(days=BOOTSTRAP_HISTORY_DAYS)
+            repositories = _pending_repositories(
+                connection,
+                refresh_active=refresh_active,
+                refresh_cutoff=refresh_cutoff,
+            )
             connection.commit()
             for repository in repositories:
                 attempted_at = _utc(clock)
-                if not _mark_attempt(connection, repository.repository_id, attempted_at):
+                if not _mark_attempt(
+                    connection,
+                    repository.repository_id,
+                    attempted_at,
+                    refresh_active=refresh_active,
+                    refresh_cutoff=refresh_cutoff,
+                ):
                     continue
                 processed_count += 1
                 try:
-                    stats = client.get_repository_stats(repository.owner, repository.name)
+                    stats = (
+                        client.get_repository_stats(repository.owner, repository.name)
+                        if repository.status == "bootstrap_pending"
+                        else None
+                    )
                     history = client.get_star_history(
                         repository.owner,
                         repository.name,
@@ -398,15 +439,15 @@ def run_bootstrap(
                     )
                     continue
 
-                baselines = calculate_bootstrap_baselines(
-                    stats.star_count,
-                    fetched_at,
-                    daily,
+                baselines = (
+                    calculate_bootstrap_baselines(stats.star_count, fetched_at, daily)
+                    if stats is not None
+                    else ()
                 )
                 completed = _complete_repository(
                     connection,
                     repository.repository_id,
-                    stats.star_count,
+                    stats.star_count if stats is not None else None,
                     fetched_at,
                     daily,
                 )
@@ -449,13 +490,22 @@ def run_bootstrap(
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Run historical bootstrap for all pending repositories."""
+    """Run historical bootstrap, optionally refreshing recent active repositories."""
     configure_logging()
     parser = argparse.ArgumentParser(description="Bootstrap repository star history")
-    parser.parse_args(argv)
+    parser.add_argument(
+        "--refresh-active",
+        action="store_true",
+        help="append source-history dates for active repositories under 30 days old",
+    )
+    arguments = parser.parse_args(argv)
     try:
         settings = get_settings()
-        result = run_bootstrap(str(settings.database_url), create_github_client(settings))
+        result = run_bootstrap(
+            str(settings.database_url),
+            create_github_client(settings),
+            refresh_active=arguments.refresh_active,
+        )
     except Exception as error:
         logger.exception(
             "bootstrap_job_failed",

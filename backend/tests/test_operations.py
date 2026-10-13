@@ -13,18 +13,18 @@ from repovil.tracking import TrackingRunResult
 
 
 def test_daily_pipeline_runs_bootstrap_after_successful_discovery() -> None:
-    calls: list[str] = []
+    calls: list[tuple[str, tuple[str, ...]]] = []
 
     def discovery(argv: Sequence[str] | None) -> int:
-        calls.append("discovery")
+        calls.append(("discovery", tuple(argv or ())))
         return 0
 
     def bootstrap(argv: Sequence[str] | None) -> int:
-        calls.append("bootstrap")
+        calls.append(("bootstrap", tuple(argv or ())))
         return 0
 
     assert run_daily(discovery=discovery, bootstrap=bootstrap) == 0
-    assert calls == ["discovery", "bootstrap"]
+    assert calls == [("discovery", ()), ("bootstrap", ("--refresh-active",))]
 
 
 def test_daily_pipeline_attempts_bootstrap_but_retains_discovery_failure() -> None:

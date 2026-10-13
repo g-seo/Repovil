@@ -91,7 +91,7 @@ LIMIT 20;
 ```
 
 - Discovery: 실패 구간만 새 run으로 재처리하려면 `repovil-discovery --retry-run RUN_ID`를 한 번 실행한다. 원 run과 원천 history는 유지된다.
-- Bootstrap: `repovil-bootstrap`을 다시 실행한다. `bootstrap_pending`만 대상으로 하고 이미 저장한 원천 row는 덮어쓰지 않는다.
+- Bootstrap: `repovil-bootstrap`은 `bootstrap_pending`만 대상으로 한다. daily pipeline은 `repovil-bootstrap --refresh-active`를 사용해 tracking 시작 후 30일 이내 active repository의 새 provider 날짜만 추가 보존한다. 두 경로 모두 기존 원천 row를 덮어쓰지 않는다.
 - Tracking: `repovil-tracking --scheduled-at YYYY-MM-DDTHH:00:00Z`는 00/06/12/18 UTC slot만 허용한다. 이미 끝난 slot은 snapshot을 중복 수집하지 않고 필요한 ranking publication만 재시도한다. 이미 공개된 run을 변경하지 않는다. 새 측정이 필요하면 다음 UTC slot을 실행한다.
 - 동시 실행 오류는 advisory lock이 정상 동작한 것이므로 기존 실행의 종료를 확인한 뒤 한 번만 재실행한다.
 

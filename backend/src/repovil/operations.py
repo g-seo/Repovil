@@ -18,9 +18,9 @@ def run_daily(
     discovery: Callable[[Sequence[str] | None], int] = discovery_main,
     bootstrap: Callable[[Sequence[str] | None], int] = bootstrap_main,
 ) -> int:
-    """Run both daily stages and retain a failure exit after bootstrap is attempted."""
+    """Run discovery then refresh bootstrap source history, retaining failure state."""
     discovery_exit = discovery(())
-    bootstrap_exit = bootstrap(())
+    bootstrap_exit = bootstrap(("--refresh-active",))
     exit_code = int(discovery_exit != 0 or bootstrap_exit != 0)
     logger.info(
         "daily_pipeline_finished",
