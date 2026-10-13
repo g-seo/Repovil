@@ -689,13 +689,13 @@ npm run build
 
 **선행 조건:** Phase 13
 
-**상태:** `[~]` — 2026-10-13 로컬 PostgreSQL의 전체 자동 인수 검증 완료; refresh 변경의 Railway staging 배포 및 실제 24시간 snapshot 확인 대기
+**상태:** `[~]` — 2026-10-13 로컬 PostgreSQL 전체 자동 인수 검증과 refresh 변경의 Railway staging daily/API 검증 완료; 다음 실제 6시간 tracking과 24시간 snapshot 확인 대기
 
 ### 구현 항목
 
 - [x] category sync → discovery → bootstrap → tracking → ranking publication → API 전체 흐름을 빈 DB integration fixture로 실행하고, frontend 회귀 suite로 UI 계약을 함께 검증한다.
-- [~] 최소 24시간의 실제 snapshot이 필요한 24h ranking은 synthetic/integration fixture로 검증했다. refresh 변경을 staging에 배포한 뒤 실제 24시간 snapshot도 별도 확인한다.
-- [~] 로컬 fixture에서 두 실제 측정 시각의 snapshot 보존과 refresh 후 bootstrap 추정→실제 24h baseline 경로를 검증했다. staging의 여러 실제 6시간 schedule 확인이 남아 있다.
+- [~] 최소 24시간의 실제 snapshot이 필요한 24h ranking은 synthetic/integration fixture로 검증했고 refresh 변경도 staging에 배포했다. 2026-10-14 06:00 UTC 이후 실제 24시간 snapshot을 별도 확인한다.
+- [~] 로컬 fixture에서 두 실제 측정 시각의 snapshot 보존과 refresh 후 bootstrap 추정→실제 24h baseline 경로를 검증했다. staging daily refresh는 확인했고, 다음 고유 slot부터 여러 실제 6시간 tracking schedule 확인이 남아 있다.
 - [x] release checklist, rollback 절차, known limitation을 `docs/MVP_RELEASE_CHECKLIST.md`와 운영 가이드에 문서화한다.
 - [x] 현재 완료 항목과 실행 기록을 갱신한다.
 
@@ -724,7 +724,10 @@ npm run build
 - 2026-10-13: `docs/MVP_RELEASE_CHECKLIST.md`를 추가하고 운영 가이드에 refresh 동작을 반영. release 전/후 점검, rollback·incident 절차, Search 완전성·bootstrap 추정·24h history의 알려진 제한을 기록했다.
 - 2026-10-13: `TEST_DATABASE_URL=... uv run pytest` — 134 passed, GitHub live 1 skipped. `uv run ruff check .`, `uv run mypy` — 통과. Linux Node 24.21.0으로 `npm --prefix frontend test` — 18 passed, `lint`, `typecheck`, `build` 및 `npm run iac:check`, `npm run iac:test` — 모두 통과.
 - 2026-10-13: 빈 로컬 PostgreSQL public schema에서 `alembic upgrade head`, `repovil-sync-categories` 2회, `repovil-db-check`를 실행해 migration·seed idempotency와 DB 연결을 확인.
-- 남은 staging 확인: 이 worker refresh 변경을 승인된 Railway staging에 배포한 뒤 daily/tracking 다회 실행과 실제 24시간 24h baseline을 확인한다. 배포·외부 데이터 변경은 현재 요청에 포함되지 않아 수행하지 않았다.
+- 2026-10-13: refresh 변경 image를 Railway staging daily deployment `63b4c9f2-56cf-48f8-a774-7e151e6cb38d`에 배포하고 `Run now`를 실행. 17분 7초 뒤 `EXITED`했으며 discovery run 3은 4,623 discovered / 8 added / 실패 range 0으로 `COMPLETED`, bootstrap은 active 4,624개를 모두 refresh하고 실패 0, `daily_pipeline_finished=COMPLETED`였다. 새 DB 연결에서 bootstrap source history 137,752행 / 4,624 repository와 마지막 fetch `2026-10-13 10:01:33 UTC`를 확인했다.
+- 2026-10-13: 같은 06:00 UTC slot에서 tracking `Run now`를 실행해 완료된 run 5를 재사용하고 `EXITED`함을 확인했다. 새 DB 연결에서 run 5의 `published_at`, snapshot 3,485건과 ranking 6,252건이 보존됐고 success-without-snapshot, non-success-with-snapshot, pending item이 모두 0이었다. API `/health`, `/ready`, 6개 category, 7d/30d ranking, category filter, pagination, repository detail/history와 web ranking 화면이 HTTP 200이었다. 24h는 아직 유효한 실제 baseline이 없어 ready 빈 결과이며, token/DB URL/authorization 로그 패턴 노출은 0건이었다.
+- 2026-10-13: daily의 repository 단위 구조화 로그가 Railway의 replica 500 logs/sec 한도를 넘겨 일부 로그가 drop됐다. 작업 결과와 DB 무결성에는 영향이 없었지만 고빈도 성공 로그 축소는 후속 운영 개선으로 남긴다.
+- 남은 staging 확인: 다음 고유 tracking slot인 2026-10-13 12:00 UTC부터 실제 6시간 snapshot 수집·보존을 확인하고, 최초 유효 snapshot으로부터 24시간이 지난 2026-10-14 06:00 UTC 이후 24h ranking이 실제 baseline(`is_estimated=false`)으로 공개되는지 확인한다.
 
 ## 5. PRD 요구사항 추적표
 
