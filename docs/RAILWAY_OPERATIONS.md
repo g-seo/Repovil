@@ -35,7 +35,7 @@ Railway IaC는 이 repository 전체가 소유하는 리소스를 모두 한 파
    railway domain --service repovil-api --environment staging --port 8000
    ```
 
-10. 아래 smoke checklist를 실행한다. Cron은 Railway가 예약 시각에 실행하므로 첫 daily/tracking 예약 실행의 종료 코드와 로그까지 확인해야 Phase 13 staging 검증이 완료된다.
+10. 아래 smoke checklist를 실행한다. 첫 daily/tracking 예약 실행으로 UTC schedule 기동을 확인한다. 이후 worker-only 수정은 같은 배포 image, start command, variable을 사용하는 Railway `Run now`로 즉시 재검증할 수 있으며, 변경하지 않은 schedule을 다시 기다리지 않는다.
 
 production은 staging 검증과 backup/PITR 확인이 끝난 뒤 별도 plan/apply한다. staging의 shared secret은 production으로 자동 복사되지 않으므로 production `GITHUB_TOKEN`도 별도로 등록한다.
 
@@ -94,6 +94,18 @@ LIMIT 20;
 - Bootstrap: `repovil-bootstrap`을 다시 실행한다. `bootstrap_pending`만 대상으로 하고 이미 저장한 원천 row는 덮어쓰지 않는다.
 - Tracking: `repovil-tracking --scheduled-at YYYY-MM-DDTHH:00:00Z`는 00/06/12/18 UTC slot만 허용한다. 이미 끝난 slot은 snapshot을 중복 수집하지 않고 필요한 ranking publication만 재시도한다. 이미 공개된 run을 변경하지 않는다. 새 측정이 필요하면 다음 UTC slot을 실행한다.
 - 동시 실행 오류는 advisory lock이 정상 동작한 것이므로 기존 실행의 종료를 확인한 뒤 한 번만 재실행한다.
+
+### Worker 수정 직후 staging 재검증
+
+UTC schedule 기동이 실제 예약 실행으로 이미 확인됐고 cron schedule/IaC를 변경하지 않았다면 다음 예약 시각까지 기다리지 않는다. Railway Dashboard의 해당 service `Cron Runs`에서 `Run now`를 사용한다. `railway cron run`을 지원하는 CLI에서는 `railway cron run --service SERVICE --environment staging --yes`도 같은 용도이며, 지원하지 않는 CLI에서는 Dashboard를 사용한다.
+
+1. 실행 중인 같은 worker가 없는지 확인한다.
+2. `repovil-tracking`을 `Run now`로 실행한다. 현재 slot의 완료 run이 미공개 상태라면 기존 run을 불러 publication만 재시도하며 snapshot을 다시 수집하지 않아야 한다.
+3. Railway run이 `EXITED`인지, 기존 run의 `published_at`과 ranking row가 새 DB connection에서도 보존되는지, API가 해당 `tracking_run_id`를 반환하는지 확인한다.
+4. `repovil-daily`를 `Run now`로 실행한다. discovery의 `github_id` 중복 방지와 bootstrap의 `bootstrap_pending` 선택으로 기존 성공 데이터를 덮어쓰지 않아야 한다.
+5. rate limit 발생 시 `github_request_retry_scheduled`의 resource/reset/sleep을 확인하고, reset 경계 이후 작업이 계속되어 최종 run과 process가 성공하는지 확인한다.
+
+이 즉시 실행은 worker 동작과 Railway 종료 상태 검증을 대체한다. UTC schedule 기동 증거가 아직 한 번도 없다면 최초 실제 예약 실행 확인은 별도로 필요하다. 검증을 위해 cron schedule을 임시로 변경하지 않는다.
 
 ## Smoke checklist
 

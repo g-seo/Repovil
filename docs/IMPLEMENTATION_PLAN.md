@@ -634,7 +634,7 @@ npm run build
 
 **선행 조건:** Phase 12
 
-**상태:** `[!]` — 2026-10-11 Railway staging API/web smoke 완료, 첫 scheduled tracking/daily 실행 확인 대기
+**상태:** `[x]` — 2026-10-13 Railway staging `Run now`로 tracking publication과 daily 전체 pipeline 재검증 완료
 
 ### 구현 항목
 
@@ -657,7 +657,7 @@ npm run build
 
 ### 테스트 방법
 
-- [ ] Railway와 동일한 command로 API, discovery, tracking을 staging에서 smoke test한다.
+- [x] Railway와 동일한 command로 API, discovery, tracking을 staging에서 smoke test한다.
 - [x] 동일 scheduled slot 동시 실행 테스트를 수행한다.
 - [x] 의도적 부분 실패에서 exit/status/log/published ranking 유지 여부를 확인한다.
 - [x] migration, health, readiness, 환경 변수 누락 실패를 확인한다.
@@ -674,6 +674,14 @@ npm run build
 - 2026-10-11: GitHub 연동 이후에도 실제 Railway staging plan/apply/smoke는 실행하지 않음. 외부 리소스 생성과 배포는 사용자가 plan을 검토하고 승인해야 하므로 Phase 13을 `[!]`로 유지하며 Phase 14는 시작하지 않음.
 - 2026-10-11: 승인된 staging plan(`5 add / 0 change / 0 destroy`)을 적용해 PostgreSQL과 API/web/daily/tracking service를 생성. Dockerfile service의 custom command가 exec form으로 실행되어 `&&` 뒤 명령이 시작되지 않는 실제 배포 실패를 확인하고, API pre-deploy/start와 두 Cron start를 명시적 `/bin/sh -c`로 수정한 뒤 IaC type check와 graph test 3개를 통과시킴.
 - 2026-10-11: 수정 plan(`0 add / 4 change / 0 destroy`)을 staging에 적용. Alembic migration 2개와 category sync(6 categories, 21 topics)가 성공하고 네 service deployment가 모두 `SUCCESS`가 됨. API/web public domain을 생성해 API `/health`, `/ready`, `/categories`와 web `/` HTTP 200을 확인. Railway가 API/web의 기본 `ON_FAILURE` restart policy를 저장 시 기본값으로 정규화해 반복 drift로 표시하므로, 동일 동작의 platform default를 사용하고 Cron의 `NEVER`만 명시적으로 유지. 실제 scheduled command 종료 검증은 tracking의 2026-10-11 12:00 UTC 첫 실행과 daily의 2026-10-12 03:00 UTC 첫 실행 후 확인해야 하므로 Phase 13은 `[!]`로 유지.
+- 2026-10-12: Railway staging의 첫 scheduled tracking(2026-10-11 12:00 UTC)과 daily(2026-10-12 03:00 UTC)를 확인. 두 deployment 모두 `CRASHED`였고 각각 12:03:46 UTC, 03:04:14 UTC에 worker 선검증이 빈 `GITHUB_TOKEN`을 `missing_variables`로 기록한 뒤 실제 worker 진입 전에 종료. 두 service에는 `GITHUB_TOKEN` 키가 있으나 해석된 값은 공백이었다. DB-backed API는 `/ready`가 ready이고 category 6개를 반환했지만 `/rankings?period=7d`는 `tracking_run_id=null`인 `preparing` 상태였다. Phase 13은 `[!]`로 유지하고 Phase 14는 시작하지 않음.
+- 2026-10-13: Railway staging의 scheduled tracking(2026-10-12 06:00 UTC, 15:00 KST)은 run 1이 `COMPLETED`로 06:02:32 UTC 종료됐고 대상·success·failed·skipped가 모두 0이었다. `tracking_run_items`, `star_snapshots`, `rankings`도 모두 0건이며 공개 분모가 0이므로 `published_at=NULL`인 것은 95% 정책과 일치한다. 이후 scheduled run들이 실행된 점과 terminal summary로 process 종료도 확인했다.
+- 2026-10-13: scheduled daily(2026-10-13 03:00 UTC, 12:00 KST)는 03:00:42 UTC 시작 후 discovery run 1이 03:03:51 UTC `PARTIAL`로 종료됐다. 3,498개를 발견·추가했지만 `mcp-server`, `mcp-servers`, `rag`, `retrieval-augmented-generation`, `vector-database`의 5개 range가 모두 `GitHubRateLimitError`/HTTP 403/retry 3으로 실패했다. Bootstrap은 3,498개 중 3,485개를 완료했고 나머지 13개가 같은 `GitHubRateLimitError`/HTTP 403/retry 3으로 `bootstrap_pending`에 남았다. `daily_pipeline_finished=FAILED` 후 Railway instance가 `CRASHED`로 종료됐으므로 정상 성공이 아니다.
+- 2026-10-13: 추가 scheduled tracking(2026-10-13 06:00 UTC, 15:00 KST)은 run 5가 06:26:22 UTC `COMPLETED`로 종료됐고 3,485 success / 0 failed / 0 skipped였다. DB에서 run item 3,485건과 snapshot 3,485건이 repository별 1:1이며 pending, success-without-snapshot, non-success-with-snapshot, orphan은 모두 0이었다. 그러나 log가 `published 6252 rankings`라고 보고한 것과 달리 재접속한 DB에는 `published_at=NULL`, ranking 0건이고 API도 `preparing`이었다. 성공률 100%인데 공개되지 않아 95% 정책을 위반한다. 원인은 `_finish_run()`의 `_run_result()` SELECT가 연 implicit transaction 안에서 `publish_rankings()`의 nested transaction만 완료된 뒤 `finally`의 `connection.rollback()`이 publication insert/update를 되돌리는 transaction 경계 결함이다. Railway process 자체는 exit 0으로 `SUCCESS`/`EXITED`였지만 data-level 성공은 아니다.
+- 2026-10-13: 위 세 실행 구간의 구조화 로그를 staging에서 해석된 실제 `GITHUB_TOKEN`·`DATABASE_URL` 값 및 token/URL/header 패턴과 대조해 노출 0건을 확인했다. DB에는 RUNNING 상태의 discovery/tracking run과 orphan snapshot/ranking이 없다. 다음 조치는 publication을 명시적으로 commit하도록 수정하고 별도 connection 재조회 regression test를 추가한 뒤 staging에 배포해 run 5의 동일 slot publication 재시도와 DB/API 확인을 수행하는 것이다. GitHub rate limit reset 후 discovery run 1의 실패 range와 bootstrap pending 13건을 재실행하고 다음 실제 scheduled daily/tracking까지 성공·종료를 다시 확인한다. 그때까지 Phase 13은 `[!]`로 유지하고 Phase 14는 시작하지 않는다.
+- 2026-10-13: 재검증 대기 시간을 줄이되 운영 계약을 바꾸지 않도록, UTC schedule 기동은 이미 관찰한 실제 예약 실행으로 증명하고 worker-only 수정은 동일 image/start command/variable의 Railway `Run now`로 즉시 검증하기로 결정. 검증용 임시 schedule 변경은 하지 않는다. tracking은 완료됐지만 미공개인 동일 slot의 publication만 재시도해 새 connection과 API에서 보존을 확인하고, daily는 idempotent 전체 pipeline을 재실행해 rate-limit reset 경계와 pending bootstrap 복구를 확인한다.
+- 2026-10-13: tracking의 신규 run과 동일 slot 재실행 경로에서 ranking publication 직후 outer transaction을 명시적으로 commit하도록 수정하고, 별도 DB connection에서 `published_at`이 보존되는 회귀 검증을 추가. GitHub rate-limit 응답은 reset epoch보다 1초 뒤이면서 exponential backoff보다 짧지 않게 대기하도록 수정해 reset 경계의 0초 재시도를 제거하고 resource/limit/reset/sleep을 구조화 로그에 추가했다. `TEST_DATABASE_URL=... uv run pytest`는 133 passed, GitHub live 1 skipped였고 `uv run ruff check ...`, `uv run mypy`도 통과했다. staging 배포와 Railway `Run now` 검증 전까지 Phase 13은 `[!]`를 유지한다.
+- 2026-10-13: 수정 image를 staging의 tracking deployment `d60318f4-5170-4cea-90d9-56f7746c0da3`와 daily deployment `f746c1ab-ddc6-46e3-8635-39674bae5b4a`에 배포해 모두 `SUCCESS` 확인. Tracking `Run now`는 완료된 run 5를 재사용해 snapshot 재수집 없이 6초 만에 `EXITED`, 6,252 ranking을 공개했고 API가 `state=ready`, `tracking_run_id=5`, 7d 2,957건을 반환했다. Daily `Run now`는 16분 27초 만에 `EXITED`; discovery run 2가 4,616 discovered / 1,118 added / 실패 range 0으로 `COMPLETED`, bootstrap은 기존 pending 13건을 포함한 1,131건 모두 완료·실패 0, pipeline도 `COMPLETED`였다. `/ready` HTTP 200과 error-level log 0건을 확인해 Phase 13을 완료 처리한다.
 
 ## Phase 14 — MVP 통합 인수 검증
 

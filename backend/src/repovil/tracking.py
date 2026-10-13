@@ -767,6 +767,7 @@ def run_tracking(
                     run_id,
                     _as_utc(clock(), label="tracking clock"),
                 )
+                connection.commit()
                 return _run_result(connection, run_id, already_finished=True)
 
             active_topics = _active_topics(connection)
@@ -794,6 +795,7 @@ def run_tracking(
                 run_id,
                 _as_utc(clock(), label="tracking clock"),
             )
+            connection.commit()
             return _run_result(connection, run_id)
         except Exception as error:
             if run_id is not None:

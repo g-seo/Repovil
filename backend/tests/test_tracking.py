@@ -239,6 +239,10 @@ def test_success_stores_actual_snapshot_and_updates_renamed_metadata_and_topics(
             """,
             (repository_id,),
         ).fetchall()
+        publication_row = connection.execute(
+            "SELECT published_at FROM tracking_runs WHERE id = %s",
+            (result.run_id,),
+        ).fetchone()
 
     assert repository_row == (
         "new-owner",
@@ -250,6 +254,7 @@ def test_success_stores_actual_snapshot_and_updates_renamed_metadata_and_topics(
     assert snapshot_row == (NOW, 350)
     assert item_row == ("success", 200, 3, 12)
     assert active_topics == [("mcp-server",)]
+    assert publication_row == (NOW,)
     assert snapshot_row[0] != SLOT
 
 

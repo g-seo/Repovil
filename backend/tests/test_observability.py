@@ -22,6 +22,11 @@ def test_json_formatter_includes_operational_fields_and_excludes_unknown_secrets
             "response_status": 200,
             "retry_count": 1,
             "duration_ms": 53,
+            "rate_limit_limit": 5_000,
+            "rate_limit_remaining": 0,
+            "rate_limit_reset_at": 1_800_000_000,
+            "rate_limit_resource": "core",
+            "sleep_seconds": 2.0,
             "github_token": "must-not-appear",
         }
     )
@@ -34,6 +39,9 @@ def test_json_formatter_includes_operational_fields_and_excludes_unknown_secrets
     assert payload["response_status"] == 200
     assert payload["retry_count"] == 1
     assert payload["duration_ms"] == 53
+    assert payload["rate_limit_resource"] == "core"
+    assert payload["rate_limit_reset_at"] == 1_800_000_000
+    assert payload["sleep_seconds"] == 2.0
     assert payload["timestamp"].endswith("Z")
     assert "must-not-appear" not in json.dumps(payload)
     assert "github_token" not in payload

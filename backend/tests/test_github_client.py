@@ -243,7 +243,7 @@ def test_retry_after_takes_priority_over_rate_limit_reset() -> None:
     assert sleeps == [17]
 
 
-def test_rate_limit_reset_precedes_secondary_limit_backoff() -> None:
+def test_rate_limit_reset_waits_until_after_the_reset_boundary() -> None:
     transport = SequenceTransport(
         json_response(
             403,
@@ -257,7 +257,25 @@ def test_rate_limit_reset_precedes_secondary_limit_backoff() -> None:
 
     client.get_repository_stats("owner", "repo")
 
-    assert sleeps == [30]
+    assert sleeps == [31]
+
+
+@pytest.mark.parametrize("reset_at", ["999", "1000"])
+def test_elapsed_rate_limit_reset_still_uses_exponential_backoff(reset_at: str) -> None:
+    transport = SequenceTransport(
+        json_response(
+            403,
+            {"message": "API rate limit exceeded"},
+            {"X-RateLimit-Remaining": "0", "X-RateLimit-Reset": reset_at},
+        ),
+        json_response(200, {"count": 10}),
+    )
+    sleeps: list[float] = []
+    client = GitHubClient(transport=transport, sleep=sleeps.append, wall_clock=lambda: 1000)
+
+    client.get_repository_stats("owner", "repo")
+
+    assert sleeps == [1]
 
 
 def test_secondary_rate_limit_without_headers_waits_at_least_60_seconds() -> None:

@@ -17,6 +17,7 @@ from urllib.request import Request, build_opener
 GITHUB_API_VERSION = "2026-03-10"
 DEFAULT_BASE_URL = "https://api.github.com"
 DEFAULT_USER_AGENT = "repovil/0.1"
+RATE_LIMIT_RESET_BUFFER_SECONDS = 1.0
 
 logger = logging.getLogger(__name__)
 
@@ -394,13 +395,24 @@ class GitHubClient:
             )
             retryable = response.status_code >= 500 or is_rate_limited
             if retryable and attempt < self._max_retries:
-                self._sleep(
-                    self._retry_delay(
-                        attempt,
-                        normalized_headers,
-                        is_rate_limited=is_rate_limited,
-                    )
+                delay = self._retry_delay(
+                    attempt,
+                    normalized_headers,
+                    is_rate_limited=is_rate_limited,
                 )
+                logger.info(
+                    "github_request_retry_scheduled",
+                    extra={
+                        "github_endpoint": path,
+                        "retry_count": attempt + 1,
+                        "sleep_seconds": delay,
+                        "rate_limit_limit": metadata.rate_limit.limit,
+                        "rate_limit_remaining": metadata.rate_limit.remaining,
+                        "rate_limit_reset_at": metadata.rate_limit.reset_at,
+                        "rate_limit_resource": metadata.rate_limit.resource,
+                    },
+                )
+                self._sleep(delay)
                 continue
             self._raise_for_response(response.status_code, body, metadata, is_rate_limited)
 
@@ -434,7 +446,10 @@ class GitHubClient:
                 "response_status": metadata.status_code,
                 "retry_count": metadata.retry_count,
                 "duration_ms": metadata.duration_ms,
+                "rate_limit_limit": metadata.rate_limit.limit,
                 "rate_limit_remaining": metadata.rate_limit.remaining,
+                "rate_limit_reset_at": metadata.rate_limit.reset_at,
+                "rate_limit_resource": metadata.rate_limit.resource,
             },
         )
 
@@ -454,7 +469,10 @@ class GitHubClient:
         if headers.get("x-ratelimit-remaining") == "0":
             reset_at = self._optional_header_int(headers, "x-ratelimit-reset")
             if reset_at is not None:
-                return max(0.0, float(reset_at) - self._wall_clock())
+                return max(
+                    self._exponential_delay(attempt),
+                    float(reset_at) - self._wall_clock() + RATE_LIMIT_RESET_BUFFER_SECONDS,
+                )
 
         delay = self._exponential_delay(attempt)
         if is_rate_limited:
