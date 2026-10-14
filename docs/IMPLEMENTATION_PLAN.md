@@ -24,7 +24,7 @@
 
 ### 의존성 순서
 
-`Phase 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 13 → 14`
+`Phase 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 13 → 14 → 15 → 16`
 
 ## 2. MVP 범위
 
@@ -736,6 +736,104 @@ npm run build
 - 2026-10-14: run 12의 24h ranking 1,892건은 모두 run 8의 실제 snapshot을 baseline으로 사용해 간격이 24.0000~24.0591시간이었고, `is_estimated=true`, baseline 누락, current star 및 `star_gain` 재계산 불일치는 모두 0이었다. API 95페이지 전체에서도 1,892개 고유 항목, `tracking_run_id=12`, estimated 0건을 확인했다.
 - 2026-10-14: staging API `/health`, `/ready`, 24h/7d/30d ranking, `skills` category filter(24h 413건), 24h page 2, `deeplethe/solid-glass` 상세와 star-history가 모두 HTTP 200이었다. web 24h ranking 화면도 HTTP 200이며 해당 repository를 렌더링했다. tracking 실행 로그 13,891건을 30초 구간으로 나눠 누락 경고 없이 전수 검사해 error/warning/failure event 0건, skipped event 3건, 실제 GitHub token·DB URL과 변수명·`Authorization`·`Bearer`·token/URL 패턴 노출 모두 0건을 확인했다. 이로써 Phase 14와 MVP 통합 인수 검증을 완료한다.
 - 2026-10-14: 완료 처리 직전 `TEST_DATABASE_URL=... uv run pytest` — 135 passed, GitHub live 1 skipped. `uv run ruff check .`, `uv run mypy`(32 source files), `git diff --check` — 모두 통과했다.
+
+## Phase 15 — Production 배포 준비와 승인 게이트
+
+**목표:** production에 resource를 생성하기 전에 배포 대상을 고정하고 secret, backup/PITR, IaC 변경 범위와 rollback 기준을 확정한다.
+
+**선행 조건:** Phase 14
+
+**상태:** `[ ]` — 시작 전
+
+### 범위 제한
+
+- 이 Phase에서는 `railway config apply`, service 배포, domain 생성, worker 실행을 하지 않는다.
+- production data를 만들거나 staging resource를 변경하지 않는다.
+- custom domain, 로그량 최적화, 비용 최적화는 최초 배포의 필수 범위에 포함하지 않는다.
+
+### 구현 항목
+
+- [ ] `main`과 `origin/main`이 일치하고 worktree가 깨끗한지 확인한 뒤 production release commit을 기록한다.
+- [ ] release commit 기준 backend 전체 test/ruff/mypy, frontend test/lint/typecheck/build, IaC typecheck/test와 `git diff --check` 결과를 기록한다. 코드 변경이 없다면 같은 commit에서 이미 실행한 결과를 재사용할 수 있다.
+- [ ] Railway target이 `production` environment인지 확인하고 현재 production resource와 variable **이름만** 조회한다. 값은 출력하거나 문서에 기록하지 않는다.
+- [ ] production용 최소 권한 `GITHUB_TOKEN`을 Railway shared variable로 준비한다. API/web에는 token이 없고 daily/tracking만 shared reference를 받는 구성을 확인한다.
+- [ ] PostgreSQL backup/PITR를 production에서 사용할 수 있는 plan과 활성화 절차를 확인한다. 사용할 수 없으면 Phase 16을 시작하지 않고 필요한 plan 변경 또는 승인된 대안을 사용자에게 요청한다.
+- [ ] `railway config plan`을 production 대상으로 실행해 Postgres, API, web, daily, tracking만 포함되는지 확인하고 add/change/destroy 수와 세부 대상을 기록한다.
+- [ ] 다음 cron slot 직후의 배포 시각, rollback에 사용할 직전 검증 image/commit, 실패 시 중단 조건을 정한다.
+- [ ] 검토된 plan과 production apply에 대해 사용자 승인을 받는다. plan이 바뀌면 기존 승인은 무효로 보고 다시 검토한다.
+
+### 완료 조건
+
+- [ ] release commit과 전체 품질 gate가 통과 상태다.
+- [ ] production secret 경계와 backup/PITR 준비 방법이 확정됐다.
+- [ ] 예상하지 않은 resource 변경과 destroy가 없는 production plan이 기록됐다.
+- [ ] Phase 16의 정확한 apply 대상과 rollback 기준이 명확하며 사용자가 production 변경을 승인했다.
+
+### 테스트 방법
+
+- [ ] `git status --short --branch`, release commit, 전체 release gate 결과를 확인한다.
+- [ ] production variable 이름과 IaC reference를 대조하되 secret 값은 어느 출력에도 남기지 않는다.
+- [ ] `npm run iac:check`, `npm run iac:test`를 실행한다.
+- [ ] production `railway config plan`을 읽기 전용으로 실행하고 environment, add/change/destroy 및 대상 resource를 수동 검토한다.
+
+### 실행 기록
+
+- 시작 전. Phase 14까지의 staging 인수 검증은 완료됐으며 production 변경은 아직 수행하지 않았다.
+
+## Phase 16 — Production 배포와 초기 운영 검증
+
+**목표:** 승인된 IaC plan을 production에 적용하고 초기 데이터 pipeline과 공개 API/web이 정상인 상태로 MVP 배포를 완료한다.
+
+**선행 조건:** Phase 15
+
+**상태:** `[ ]` — 시작 전
+
+### 범위 제한
+
+- Phase 15에서 승인된 plan만 적용한다. apply 직전 plan이 달라지면 즉시 중단하고 재승인을 받는다.
+- Railway 생성 domain을 사용하며 custom domain/DNS 설정은 최초 배포 완료 조건에서 제외한다.
+- staging data를 production으로 복사하지 않고 production pipeline이 자체 데이터를 생성하게 한다.
+- production 24h ranking은 실제 snapshot이 24시간 이상 쌓인 뒤 생기는 것이 정상이며, 그 대기 자체는 이 Phase의 완료를 막지 않는다.
+
+### 구현 항목
+
+- [ ] 다음 cron slot 직후에 production plan을 다시 확인하고 승인된 내용과 같을 때만 `railway config apply`를 실행한다.
+- [ ] Postgres와 API/web/daily/tracking service가 생성되고 API pre-deploy의 환경 검사, Alembic upgrade, category sync 및 각 deployment가 성공했는지 확인한다.
+- [ ] production PostgreSQL의 backup/PITR가 초기 pipeline 실행 전에 실제로 활성화됐는지 확인한다.
+- [ ] API와 web의 Railway production domain을 생성하고 `/health`, `/ready`, web `/`, `/categories`가 HTTP 200이며 활성 category 6개를 반환하는지 확인한다.
+- [ ] daily worker를 한 번 실행해 discovery와 bootstrap이 `COMPLETED`, failed range와 bootstrap failure가 0인지 확인한다. 실패하면 원인을 해결한 뒤 기록된 실패 범위/대상만 안전하게 재시도한다.
+- [ ] daily 완료 후 tracking worker를 한 번 실행해 Railway가 `EXITED`, DB run이 `COMPLETED`이고 ranking이 공개됐는지 새 DB connection으로 확인한다.
+- [ ] tracking run의 success/failed/skipped/pending, snapshot/ranking 수와 success-without-snapshot, non-success-with-snapshot, orphan snapshot, pending item 무결성을 확인한다.
+- [ ] API의 7d/30d ranking, category filter, pagination, repository detail, star-history와 web ranking 화면을 검증한다. 24h는 HTTP 200과 준비 상태 또는 실제 history에 맞는 결과만 요구한다.
+- [ ] production worker 로그에서 failure event를 확인하고 GitHub token, DB URL, `Authorization`/`Bearer` 및 secret 패턴 노출이 0인지 검사한다.
+- [ ] daily `0 3 * * *`, tracking `0 */6 * * *` UTC와 다음 cron 시각이 설정됐는지 확인하고 deployment/run/domain/수치/로그 결과를 이 문서에 기록한다.
+
+### 완료 조건
+
+- [ ] production API/web이 public domain에서 healthy/ready 상태다.
+- [ ] production daily와 tracking 초기 실행이 성공하고 새 DB connection에서도 snapshot, ranking, publication이 보존된다.
+- [ ] API/web의 MVP 주요 경로가 production data로 동작한다.
+- [ ] DB 무결성 오류와 secret 로그 노출이 모두 0이다.
+- [ ] UTC cron 설정, backup/PITR, rollback 대상과 장애 대응 경로가 확인됐다.
+
+### 테스트 방법
+
+- [ ] Railway plan/apply 및 API pre-deploy/build/deployment 로그를 확인한다.
+- [ ] `/health`, `/ready`, `/categories`, `/rankings`, repository detail/history와 web `/`를 실제 production domain에서 요청한다.
+- [ ] 새 production DB connection으로 run, item, snapshot, ranking, publication 및 네 무결성 query를 실행한다.
+- [ ] daily/tracking 전체 로그를 secret 실제값과 안전한 패턴으로 대조하고 failure event를 집계한다.
+- [ ] `railway status`에서 service 상태, cron schedule과 다음 실행 시각을 확인한다.
+
+### 중단 및 rollback 기준
+
+- apply 전 environment 또는 plan이 Phase 15 승인 내용과 다르면 변경하지 않고 중단한다.
+- migration/category sync, backup/PITR, health/readiness 또는 필수 variable 검증이 실패하면 worker를 실행하지 않고 원인을 해결한다.
+- worker가 실패하면 실패 run을 성공처럼 수정하지 않고 `docs/RAILWAY_OPERATIONS.md`의 targeted retry 절차를 따른다.
+- application rollback은 schema와 호환되는 검증 image만 redeploy한다. production DB downgrade나 data restore는 별도 명시적 승인 없이는 실행하지 않는다.
+
+### 실행 기록
+
+- 시작 전. production apply, domain 생성, worker 실행은 아직 수행하지 않았다.
 
 ## 5. PRD 요구사항 추적표
 
