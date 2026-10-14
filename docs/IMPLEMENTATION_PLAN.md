@@ -743,7 +743,7 @@ npm run build
 
 **선행 조건:** Phase 14
 
-**상태:** `[ ]` — 시작 전
+**상태:** `[x]` — 완료
 
 ### 범위 제한
 
@@ -753,32 +753,39 @@ npm run build
 
 ### 구현 항목
 
-- [ ] `main`과 `origin/main`이 일치하고 worktree가 깨끗한지 확인한 뒤 production release commit을 기록한다.
-- [ ] release commit 기준 backend 전체 test/ruff/mypy, frontend test/lint/typecheck/build, IaC typecheck/test와 `git diff --check` 결과를 기록한다. 코드 변경이 없다면 같은 commit에서 이미 실행한 결과를 재사용할 수 있다.
-- [ ] Railway target이 `production` environment인지 확인하고 현재 production resource와 variable **이름만** 조회한다. 값은 출력하거나 문서에 기록하지 않는다.
-- [ ] production용 최소 권한 `GITHUB_TOKEN`을 Railway shared variable로 준비한다. API/web에는 token이 없고 daily/tracking만 shared reference를 받는 구성을 확인한다.
-- [ ] PostgreSQL backup/PITR를 production에서 사용할 수 있는 plan과 활성화 절차를 확인한다. 사용할 수 없으면 Phase 16을 시작하지 않고 필요한 plan 변경 또는 승인된 대안을 사용자에게 요청한다.
-- [ ] `railway config plan`을 production 대상으로 실행해 Postgres, API, web, daily, tracking만 포함되는지 확인하고 add/change/destroy 수와 세부 대상을 기록한다.
-- [ ] 다음 cron slot 직후의 배포 시각, rollback에 사용할 직전 검증 image/commit, 실패 시 중단 조건을 정한다.
-- [ ] 검토된 plan과 production apply에 대해 사용자 승인을 받는다. plan이 바뀌면 기존 승인은 무효로 보고 다시 검토한다.
+- [x] `main`과 `origin/main`이 일치하고 worktree가 깨끗한지 확인한 뒤 production release commit을 기록한다.
+- [x] release commit 기준 backend 전체 test/ruff/mypy, frontend test/lint/typecheck/build, IaC typecheck/test와 `git diff --check` 결과를 기록한다. 코드 변경이 없다면 같은 commit에서 이미 실행한 결과를 재사용할 수 있다.
+- [x] Railway target이 `production` environment인지 확인하고 현재 production resource와 variable **이름만** 조회한다. 값은 출력하거나 문서에 기록하지 않는다.
+- [x] production용 최소 권한 `GITHUB_TOKEN`을 Railway shared variable로 준비한다. API/web에는 token이 없고 daily/tracking만 shared reference를 받는 구성을 확인한다.
+- [x] PostgreSQL backup/PITR를 production에서 사용할 수 있는 plan과 활성화 절차를 확인한다. 사용할 수 없으면 Phase 16을 시작하지 않고 필요한 plan 변경 또는 승인된 대안을 사용자에게 요청한다.
+- [x] `railway config plan`을 production 대상으로 실행해 Postgres, API, web, daily, tracking만 포함되는지 확인하고 add/change/destroy 수와 세부 대상을 기록한다.
+- [x] 다음 cron slot 직후의 배포 시각, rollback에 사용할 직전 검증 image/commit, 실패 시 중단 조건을 정한다.
+- [x] 검토된 plan과 production apply에 대해 사용자 승인을 받는다. plan이 바뀌면 기존 승인은 무효로 보고 다시 검토한다.
 
 ### 완료 조건
 
-- [ ] release commit과 전체 품질 gate가 통과 상태다.
-- [ ] production secret 경계와 backup/PITR 준비 방법이 확정됐다.
-- [ ] 예상하지 않은 resource 변경과 destroy가 없는 production plan이 기록됐다.
-- [ ] Phase 16의 정확한 apply 대상과 rollback 기준이 명확하며 사용자가 production 변경을 승인했다.
+- [x] release commit과 전체 품질 gate가 통과 상태다.
+- [x] production secret 경계와 backup/PITR 준비 방법이 확정됐다.
+- [x] 예상하지 않은 resource 변경과 destroy가 없는 production plan이 기록됐다.
+- [x] Phase 16의 정확한 apply 대상과 rollback 기준이 명확하며 사용자가 production 변경을 승인했다.
 
 ### 테스트 방법
 
-- [ ] `git status --short --branch`, release commit, 전체 release gate 결과를 확인한다.
-- [ ] production variable 이름과 IaC reference를 대조하되 secret 값은 어느 출력에도 남기지 않는다.
-- [ ] `npm run iac:check`, `npm run iac:test`를 실행한다.
-- [ ] production `railway config plan`을 읽기 전용으로 실행하고 environment, add/change/destroy 및 대상 resource를 수동 검토한다.
+- [x] `git status --short --branch`, release commit, 전체 release gate 결과를 확인한다.
+- [x] production variable 이름과 IaC reference를 대조하되 secret 값은 어느 출력에도 남기지 않는다.
+- [x] `npm run iac:check`, `npm run iac:test`를 실행한다.
+- [x] production `railway config plan`을 읽기 전용으로 실행하고 environment, add/change/destroy 및 대상 resource를 수동 검토한다.
 
 ### 실행 기록
 
-- 시작 전. Phase 14까지의 staging 인수 검증은 완료됐으며 production 변경은 아직 수행하지 않았다.
+- 2026-10-14: 시작 시 `main`과 `origin/main`은 `5b44cdd71cba76184f7e01baf963c3b688004ccf`로 일치했고 worktree는 깨끗했다. production application release commit은 마지막 application 변경인 `a766030036f02e405dc93f5a155340659e8b3bf4`이며, 이후 `a6b102c`와 `5b44cdd`는 구현 계획 문서만 변경했다. Phase 15 기록을 사용자가 commit한 뒤 Phase 16 시작 직전에 다시 `main == origin/main`과 application/IaC 무변경을 확인한다.
+- 2026-10-14: application 내용이 같은 `a6b102c` 기준 release gate를 재사용했다. backend는 135 passed / GitHub live 1 skipped, Ruff 통과, mypy 32 source files 통과였다. frontend는 18 passed, lint/typecheck/build가 통과했고 IaC는 typecheck와 3 tests, `git diff --check`가 통과했다. Phase 15에서 IaC typecheck와 3 tests, `git diff --check`를 다시 실행해 모두 통과했다.
+- 2026-10-14: Railway project `Repovil`의 production environment는 `76f2d1f0-cb43-46c1-939c-8f2cf04fdb8d`이며 resource가 0개였다. 최초 Public API의 active shared-variable query 결과 variable 이름도 0개였고 값은 조회 결과에 출력하지 않았다. IaC는 API/web에 token을 전달하지 않고 `repovil-daily`와 `repovil-tracking`의 `GITHUB_TOKEN`만 `${{shared.GITHUB_TOKEN}}`을 참조하며, 이 경계는 IaC test로 확인했다.
+- 2026-10-14: 최초 확인 당시 project의 `subscriptionType`은 `trial`이었다. Railway의 [volume backup](https://docs.railway.com/volumes/backups), [Postgres PITR](https://docs.railway.com/volumes/point-in-time-recovery) 공식 문서와 CLI 5.68.0에서 scheduled backup과 PITR를 확인했으며 PITR 자체에는 별도 기능 요금이 없고 bucket storage와 upload egress가 과금된다. production Postgres가 아직 없어 현재 PITR status는 `enabled=false`, `bucketWired=false`이고 database image가 없다는 blocker를 반환하는 것이 정상이다. Phase 16에서는 Postgres 첫 배포 성공 직후 worker 실행 전에 production service ID를 다시 확인하고 `railway postgres pitr enable --service ID --environment production`, `railway postgres pitr schedule set --daily --weekly --monthly --service ID --environment production`을 실행한다. 이어 `pitr status`에서 enabled/bucket wiring/blocker와 최초 backup coverage를, `pitr schedule list`에서 세 schedule을 확인한다. 하나라도 확인되지 않으면 worker를 실행하지 않는다.
+- 2026-10-14: Linux Node를 지정한 읽기 전용 `railway config plan --environment production --verbose` 결과는 정확히 5 add / 0 change / 0 destroy였다. add 대상은 `Postgres`, `repovil-api`, `repovil-web`, `repovil-daily`, `repovil-tracking`뿐이며 production apply, service 배포, domain 생성, worker 실행 및 staging 변경은 수행하지 않았다.
+- 2026-10-14: 승인 후 첫 배포 창은 다음 `0 */6 * * *` tracking slot의 5~15분 뒤로 정했다. 현재 시각 기준 후보는 2026-10-14 18:05~18:15 UTC(2026-10-15 03:05~03:15 KST)이며 놓치면 다음 00/06/12/18 UTC slot 뒤 같은 창으로 이동한다. application rollback 기준은 staging에서 검증된 `a766030`이고, 특히 최종 tracking image는 deployment `fc1cf278-e27c-456e-a34d-0b97c13abebf` / digest `sha256:127e0cbd21a04a941d0f4468afffb1daf8ba03c4192a550c5bce5b0b437e342c`다. 최초 production에는 직전 image가 없으므로 실패 시 domain/worker를 진행하지 않고 DB와 실행 이력을 보존한 채 중단하며, schema downgrade나 restore는 별도 승인 없이 하지 않는다. 첫 성공 production deployment ID/image는 즉시 이후 rollback 대상으로 기록한다.
+- 2026-10-14: 사용자가 workspace를 Hobby plan으로 전환했다. Public API에서 `subscriptionType=hobby`를 확인했고, 사용자는 5 add / 0 change / 0 destroy plan, PITR/backup storage·egress 비용 및 Phase 16 production apply를 명시적으로 승인했다. 승인 후 production plan을 다시 실행해 대상과 수치가 바뀌지 않았음을 확인했다.
+- 2026-10-14: production environment staged patch `2a924aa6-f36b-4288-8c9d-21333dc3c479`가 `STAGED`이고 `patch.sharedVariables.GITHUB_TOKEN`을 포함함을 `decryptVariables=false`로 확인했다. 실제 token 값은 조회하거나 출력하지 않았다. 서비스가 아직 없어 active shared-variable 목록이 빈 것은 정상이며, Phase 16 apply 직전 이 patch와 token reference가 유지되는지 다시 확인한다. Apply 후 active shared-variable 이름과 daily/tracking reference를 확인하고 API/web에는 token이 없는지 검증하며, 하나라도 다르면 worker 실행 전에 중단한다. 이로써 Phase 15를 완료하며 production apply와 Phase 16 실행은 아직 수행하지 않았다.
 
 ## Phase 16 — Production 배포와 초기 운영 검증
 
