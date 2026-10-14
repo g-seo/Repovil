@@ -689,13 +689,13 @@ npm run build
 
 **선행 조건:** Phase 13
 
-**상태:** `[~]` — 2026-10-14 실제 24시간 snapshot/ranking 검증 완료; 반복 identity mismatch를 skipped로 처리하는 수정 배포 후 다음 고유 tracking slot 확인 대기
+**상태:** `[x]` — 2026-10-14 수정 배포 후 첫 고유 Railway staging tracking slot과 DB/API/web/log 인수 검증 완료
 
 ### 구현 항목
 
 - [x] category sync → discovery → bootstrap → tracking → ranking publication → API 전체 흐름을 빈 DB integration fixture로 실행하고, frontend 회귀 suite로 UI 계약을 함께 검증한다.
 - [x] 최소 24시간의 실제 snapshot이 필요한 24h ranking을 synthetic/integration fixture와 2026-10-14 06:00 UTC staging run에서 모두 검증했다.
-- [~] staging에서 5개 실제 snapshot까지 보존되고 24h 실제 baseline 전환도 확인했다. identity mismatch 수정 배포 뒤 첫 고유 slot의 정상 종료 확인이 남아 있다.
+- [x] staging에서 실제 snapshot 보존, 24h 실제 baseline 전환, identity mismatch 수정 배포 뒤 첫 고유 slot의 정상 종료를 확인했다.
 - [x] release checklist, rollback 절차, known limitation을 `docs/MVP_RELEASE_CHECKLIST.md`와 운영 가이드에 문서화한다.
 - [x] 현재 완료 항목과 실행 기록을 갱신한다.
 
@@ -731,7 +731,11 @@ npm run build
 - 2026-10-14: owner/name 재사용으로 다른 GitHub identity가 확인된 경우 저장 identity와 history를 보존하면서 원 repository를 inactive로 전환하고 `skipped`로 기록하도록 수정. 회귀 테스트를 추가했고 `TEST_DATABASE_URL=... uv run pytest`는 135 passed, GitHub live 1 skipped, `uv run ruff check .`, `uv run mypy`, `git diff --check`는 통과했다. tracking staging deployment `36245b69-4f9d-4c96-8de4-0e5753323101` 빌드와 후속 활성 deployment `fc1cf278-e27c-456e-a34d-0b97c13abebf`가 `SUCCESS`였다.
 - 2026-10-14: scheduled daily 03:00 UTC Cron Run은 03:00:32~03:16:01 UTC `EXITED`; discovery run 4는 4,628 discovered / 19 added / 실패 range 0, bootstrap refresh 4,630 completed / 0 failed로 pipeline `COMPLETED`였다. 새 DB 연결에서 run 11의 success-without-snapshot, non-success-with-snapshot, orphan, pending이 모두 0이고, repository 4,623개가 snapshot 2개 이상, 4,610개가 4개 이상, 표본 repository는 5개 실제 snapshot을 보존함을 확인했다.
 - 2026-10-14: run 11의 24h ranking 1,924건은 `is_estimated=true` 0건, 실제 baseline 누락 0건, `star_gain` 재계산 불일치 0건이었다. baseline은 모두 tracking run 5의 실제 snapshot이고 간격은 24.003~24.051시간이었다. API `/health`, `/ready`, category 6개, run 11의 24h 1,924건 / 7d 3,677건 / 30d 4,308건, `skills` filter 459건, page 2, repository detail/history와 web 24h 화면 HTTP 200을 확인했다. 조회한 daily/tracking 로그에서 token 실제값, DB URL 실제값, token/DB URL 패턴, Authorization/Bearer 노출은 모두 0건이었다.
-- 남은 staging 확인: identity mismatch 수정 deployment 이후 첫 고유 tracking slot인 2026-10-14 12:00 UTC가 DB `COMPLETED` 및 Railway `EXITED`로 끝나는지 확인한다. 2026-10-14 07:35 UTC 현재 이 slot은 아직 미래이며, 미래 slot을 조기 생성하면 실제 측정 시각과 schedule provenance를 훼손하므로 실행하지 않았다.
+- 2026-10-14: 수정 image의 활성 tracking deployment `fc1cf278-e27c-456e-a34d-0b97c13abebf`에서 첫 고유 12:00 UTC Cron Run이 12:03:35 UTC 환경 검증 후 시작해 12:37:13 UTC 최종 요약을 남기고 Railway instance `5e5f4fef-76e9-4dc2-942d-fe584d917f8b`가 `EXITED`했다. 새 DB 연결에서 run 12는 12:03:36~12:36:33 UTC `COMPLETED` 및 공개 완료였고, 4,630 대상 중 4,627 success / 0 failed / 3 skipped, snapshot 4,627건, ranking 9,874건(24h 1,892 / 7d 3,675 / 30d 4,307)이었다.
+- 2026-10-14: run 12의 success-without-snapshot, non-success-with-snapshot, orphan snapshot, pending item은 모두 0이었다. 문제 repository id 3848은 원래 `github_id=642065600`, `Anil-matcha/awesome-jev-by-typesafe`와 run 8/9의 snapshot 2건을 보존하고, 다른 identity `1415634409`로의 owner/name 재사용을 `RepositoryIdentityMismatchError`로 기록하면서 run 12에서 `skipped`, repository는 `inactive`가 됐다. 나머지 skipped 2건은 GitHub 404로 비활성화된 repository였으며 failed item은 없었다.
+- 2026-10-14: run 12의 24h ranking 1,892건은 모두 run 8의 실제 snapshot을 baseline으로 사용해 간격이 24.0000~24.0591시간이었고, `is_estimated=true`, baseline 누락, current star 및 `star_gain` 재계산 불일치는 모두 0이었다. API 95페이지 전체에서도 1,892개 고유 항목, `tracking_run_id=12`, estimated 0건을 확인했다.
+- 2026-10-14: staging API `/health`, `/ready`, 24h/7d/30d ranking, `skills` category filter(24h 413건), 24h page 2, `deeplethe/solid-glass` 상세와 star-history가 모두 HTTP 200이었다. web 24h ranking 화면도 HTTP 200이며 해당 repository를 렌더링했다. tracking 실행 로그 13,891건을 30초 구간으로 나눠 누락 경고 없이 전수 검사해 error/warning/failure event 0건, skipped event 3건, 실제 GitHub token·DB URL과 변수명·`Authorization`·`Bearer`·token/URL 패턴 노출 모두 0건을 확인했다. 이로써 Phase 14와 MVP 통합 인수 검증을 완료한다.
+- 2026-10-14: 완료 처리 직전 `TEST_DATABASE_URL=... uv run pytest` — 135 passed, GitHub live 1 skipped. `uv run ruff check .`, `uv run mypy`(32 source files), `git diff --check` — 모두 통과했다.
 
 ## 5. PRD 요구사항 추적표
 
