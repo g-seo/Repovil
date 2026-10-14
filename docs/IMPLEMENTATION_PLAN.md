@@ -689,13 +689,13 @@ npm run build
 
 **선행 조건:** Phase 13
 
-**상태:** `[~]` — 2026-10-13 로컬 PostgreSQL 전체 자동 인수 검증과 refresh 변경의 Railway staging daily/API 검증 완료; 다음 실제 6시간 tracking과 24시간 snapshot 확인 대기
+**상태:** `[~]` — 2026-10-14 실제 24시간 snapshot/ranking 검증 완료; 반복 identity mismatch를 skipped로 처리하는 수정 배포 후 다음 고유 tracking slot 확인 대기
 
 ### 구현 항목
 
 - [x] category sync → discovery → bootstrap → tracking → ranking publication → API 전체 흐름을 빈 DB integration fixture로 실행하고, frontend 회귀 suite로 UI 계약을 함께 검증한다.
-- [~] 최소 24시간의 실제 snapshot이 필요한 24h ranking은 synthetic/integration fixture로 검증했고 refresh 변경도 staging에 배포했다. 2026-10-14 06:00 UTC 이후 실제 24시간 snapshot을 별도 확인한다.
-- [~] 로컬 fixture에서 두 실제 측정 시각의 snapshot 보존과 refresh 후 bootstrap 추정→실제 24h baseline 경로를 검증했다. staging daily refresh는 확인했고, 다음 고유 slot부터 여러 실제 6시간 tracking schedule 확인이 남아 있다.
+- [x] 최소 24시간의 실제 snapshot이 필요한 24h ranking을 synthetic/integration fixture와 2026-10-14 06:00 UTC staging run에서 모두 검증했다.
+- [~] staging에서 5개 실제 snapshot까지 보존되고 24h 실제 baseline 전환도 확인했다. identity mismatch 수정 배포 뒤 첫 고유 slot의 정상 종료 확인이 남아 있다.
 - [x] release checklist, rollback 절차, known limitation을 `docs/MVP_RELEASE_CHECKLIST.md`와 운영 가이드에 문서화한다.
 - [x] 현재 완료 항목과 실행 기록을 갱신한다.
 
@@ -727,7 +727,11 @@ npm run build
 - 2026-10-13: refresh 변경 image를 Railway staging daily deployment `63b4c9f2-56cf-48f8-a774-7e151e6cb38d`에 배포하고 `Run now`를 실행. 17분 7초 뒤 `EXITED`했으며 discovery run 3은 4,623 discovered / 8 added / 실패 range 0으로 `COMPLETED`, bootstrap은 active 4,624개를 모두 refresh하고 실패 0, `daily_pipeline_finished=COMPLETED`였다. 새 DB 연결에서 bootstrap source history 137,752행 / 4,624 repository와 마지막 fetch `2026-10-13 10:01:33 UTC`를 확인했다.
 - 2026-10-13: 같은 06:00 UTC slot에서 tracking `Run now`를 실행해 완료된 run 5를 재사용하고 `EXITED`함을 확인했다. 새 DB 연결에서 run 5의 `published_at`, snapshot 3,485건과 ranking 6,252건이 보존됐고 success-without-snapshot, non-success-with-snapshot, pending item이 모두 0이었다. API `/health`, `/ready`, 6개 category, 7d/30d ranking, category filter, pagination, repository detail/history와 web ranking 화면이 HTTP 200이었다. 24h는 아직 유효한 실제 baseline이 없어 ready 빈 결과이며, token/DB URL/authorization 로그 패턴 노출은 0건이었다.
 - 2026-10-13: daily의 repository 단위 구조화 로그가 Railway의 replica 500 logs/sec 한도를 넘겨 일부 로그가 drop됐다. 작업 결과와 DB 무결성에는 영향이 없었지만 고빈도 성공 로그 축소는 후속 운영 개선으로 남긴다.
-- 남은 staging 확인: 다음 고유 tracking slot인 2026-10-13 12:00 UTC부터 실제 6시간 snapshot 수집·보존을 확인하고, 최초 유효 snapshot으로부터 24시간이 지난 2026-10-14 06:00 UTC 이후 24h ranking이 실제 baseline(`is_estimated=false`)으로 공개되는지 확인한다.
+- 2026-10-14: Railway Cron Runs에서 tracking 2026-10-13 12:00/18:00 UTC가 각각 `EXITED`, DB run 8/9가 `COMPLETED`임을 확인. 2026-10-14 00:00/06:00 UTC는 동일 repository id 3848의 저장 `github_id`와 현재 owner/name 경로가 가리키는 `github_id` 불일치 1건 때문에 DB run 10/11이 `PARTIAL`, Railway는 non-zero exit 정책에 따라 `CRASHED`였다. 06:00 run 11은 4,629 success / 1 failed / 0 skipped, snapshot 4,629건과 ranking 9,909건을 원자적으로 공개했다.
+- 2026-10-14: owner/name 재사용으로 다른 GitHub identity가 확인된 경우 저장 identity와 history를 보존하면서 원 repository를 inactive로 전환하고 `skipped`로 기록하도록 수정. 회귀 테스트를 추가했고 `TEST_DATABASE_URL=... uv run pytest`는 135 passed, GitHub live 1 skipped, `uv run ruff check .`, `uv run mypy`, `git diff --check`는 통과했다. tracking staging deployment `36245b69-4f9d-4c96-8de4-0e5753323101` 빌드와 후속 활성 deployment `fc1cf278-e27c-456e-a34d-0b97c13abebf`가 `SUCCESS`였다.
+- 2026-10-14: scheduled daily 03:00 UTC Cron Run은 03:00:32~03:16:01 UTC `EXITED`; discovery run 4는 4,628 discovered / 19 added / 실패 range 0, bootstrap refresh 4,630 completed / 0 failed로 pipeline `COMPLETED`였다. 새 DB 연결에서 run 11의 success-without-snapshot, non-success-with-snapshot, orphan, pending이 모두 0이고, repository 4,623개가 snapshot 2개 이상, 4,610개가 4개 이상, 표본 repository는 5개 실제 snapshot을 보존함을 확인했다.
+- 2026-10-14: run 11의 24h ranking 1,924건은 `is_estimated=true` 0건, 실제 baseline 누락 0건, `star_gain` 재계산 불일치 0건이었다. baseline은 모두 tracking run 5의 실제 snapshot이고 간격은 24.003~24.051시간이었다. API `/health`, `/ready`, category 6개, run 11의 24h 1,924건 / 7d 3,677건 / 30d 4,308건, `skills` filter 459건, page 2, repository detail/history와 web 24h 화면 HTTP 200을 확인했다. 조회한 daily/tracking 로그에서 token 실제값, DB URL 실제값, token/DB URL 패턴, Authorization/Bearer 노출은 모두 0건이었다.
+- 남은 staging 확인: identity mismatch 수정 deployment 이후 첫 고유 tracking slot인 2026-10-14 12:00 UTC가 DB `COMPLETED` 및 Railway `EXITED`로 끝나는지 확인한다. 2026-10-14 07:35 UTC 현재 이 slot은 아직 미래이며, 미래 slot을 조기 생성하면 실제 측정 시각과 schedule provenance를 훼손하므로 실행하지 않았다.
 
 ## 5. PRD 요구사항 추적표
 

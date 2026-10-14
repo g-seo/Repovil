@@ -575,8 +575,15 @@ def _process_target(
         mismatch_error = RepositoryIdentityMismatchError(
             f"saved github_id {target.github_id} resolved to {repository.github_id}"
         )
-        _store_failed(connection, run_id, target, mismatch_error, (metadata.request,))
-        raise _HandledFailure
+        _store_skipped_without_metadata(
+            connection,
+            run_id,
+            target,
+            reason_type=type(mismatch_error).__name__,
+            reason=str(mismatch_error),
+            request=metadata.request,
+        )
+        return
 
     relevant_topics = sorted(set(repository.topics).intersection(active_topics))
     topic_ids = [active_topics[name] for name in relevant_topics]

@@ -429,6 +429,44 @@ def test_deleted_or_private_404_is_skipped_and_preserves_repository_history(
 
 
 @pytest.mark.integration
+def test_reused_owner_name_is_skipped_without_replacing_github_identity(
+    tracking_database_url: str,
+) -> None:
+    repository_id = _insert_active_repository(tracking_database_url, 101)
+
+    result = run_tracking(
+        tracking_database_url,
+        FakeClient({"repo-101": repository(202)}),
+        scheduled_at=SLOT,
+        clock=lambda: NOW,
+    )
+
+    assert (result.status, result.skipped_count, result.failed_count) == ("COMPLETED", 1, 0)
+    with psycopg.connect(tracking_database_url) as connection:
+        repository_row = connection.execute(
+            "SELECT github_id, owner, name, status FROM repositories WHERE id = %s",
+            (repository_id,),
+        ).fetchone()
+        item_row = connection.execute(
+            """
+            SELECT status, error_type, error_message, response_status
+            FROM tracking_run_items
+            WHERE tracking_run_id = %s AND repository_id = %s
+            """,
+            (result.run_id, repository_id),
+        ).fetchone()
+        snapshot_count = connection.execute("SELECT count(*) FROM star_snapshots").fetchone()
+    assert repository_row == (101, "owner", "repo-101", "inactive")
+    assert item_row == (
+        "skipped",
+        "RepositoryIdentityMismatchError",
+        "saved github_id 101 resolved to 202",
+        200,
+    )
+    assert snapshot_count == (0,)
+
+
+@pytest.mark.integration
 def test_authentication_failure_marks_unprocessed_targets_failed_and_fails_run(
     tracking_database_url: str,
 ) -> None:
