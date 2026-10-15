@@ -793,7 +793,7 @@ npm run build
 
 **선행 조건:** Phase 15
 
-**상태:** `[ ]` — 시작 전
+**상태:** `[x]` — 2026-10-15 완료 (승인된 Hobby PITR-only / Pro backup schedule 예외 적용)
 
 ### 범위 제한
 
@@ -804,32 +804,32 @@ npm run build
 
 ### 구현 항목
 
-- [ ] 다음 cron slot 직후에 production plan을 다시 확인하고 승인된 내용과 같을 때만 `railway config apply`를 실행한다.
-- [ ] Postgres와 API/web/daily/tracking service가 생성되고 API pre-deploy의 환경 검사, Alembic upgrade, category sync 및 각 deployment가 성공했는지 확인한다.
-- [ ] production PostgreSQL의 backup/PITR가 초기 pipeline 실행 전에 실제로 활성화됐는지 확인한다.
-- [ ] API와 web의 Railway production domain을 생성하고 `/health`, `/ready`, web `/`, `/categories`가 HTTP 200이며 활성 category 6개를 반환하는지 확인한다.
-- [ ] daily worker를 한 번 실행해 discovery와 bootstrap이 `COMPLETED`, failed range와 bootstrap failure가 0인지 확인한다. 실패하면 원인을 해결한 뒤 기록된 실패 범위/대상만 안전하게 재시도한다.
-- [ ] daily 완료 후 tracking worker를 한 번 실행해 Railway가 `EXITED`, DB run이 `COMPLETED`이고 ranking이 공개됐는지 새 DB connection으로 확인한다.
-- [ ] tracking run의 success/failed/skipped/pending, snapshot/ranking 수와 success-without-snapshot, non-success-with-snapshot, orphan snapshot, pending item 무결성을 확인한다.
-- [ ] API의 7d/30d ranking, category filter, pagination, repository detail, star-history와 web ranking 화면을 검증한다. 24h는 HTTP 200과 준비 상태 또는 실제 history에 맞는 결과만 요구한다.
-- [ ] production worker 로그에서 failure event를 확인하고 GitHub token, DB URL, `Authorization`/`Bearer` 및 secret 패턴 노출이 0인지 검사한다.
-- [ ] daily `0 3 * * *`, tracking `0 */6 * * *` UTC와 다음 cron 시각이 설정됐는지 확인하고 deployment/run/domain/수치/로그 결과를 이 문서에 기록한다.
+- [x] 다음 cron slot 직후에 production plan을 다시 확인하고 승인된 내용과 같을 때만 `railway config apply`를 실행한다.
+- [x] Postgres와 API/web/daily/tracking service가 생성되고 API pre-deploy의 환경 검사, Alembic upgrade, category sync 및 각 deployment가 성공했는지 확인한다.
+- [x] production PostgreSQL의 backup/PITR가 초기 pipeline 실행 전에 실제로 활성화됐는지 확인한다.
+- [x] API와 web의 Railway production domain을 생성하고 `/health`, `/ready`, web `/`, `/categories`가 HTTP 200이며 활성 category 6개를 반환하는지 확인한다.
+- [x] daily worker를 한 번 실행해 discovery와 bootstrap이 `COMPLETED`, failed range와 bootstrap failure가 0인지 확인한다. 실패하면 원인을 해결한 뒤 기록된 실패 범위/대상만 안전하게 재시도한다.
+- [x] daily 완료 후 tracking worker를 한 번 실행해 Railway가 `EXITED`, DB run이 `COMPLETED`이고 ranking이 공개됐는지 새 DB connection으로 확인한다.
+- [x] tracking run의 success/failed/skipped/pending, snapshot/ranking 수와 success-without-snapshot, non-success-with-snapshot, orphan snapshot, pending item 무결성을 확인한다.
+- [x] API의 7d/30d ranking, category filter, pagination, repository detail, star-history와 web ranking 화면을 검증한다. 24h는 HTTP 200과 준비 상태 또는 실제 history에 맞는 결과만 요구한다.
+- [x] production worker 로그에서 failure event를 확인하고 GitHub token, DB URL, `Authorization`/`Bearer` 및 secret 패턴 노출이 0인지 검사한다.
+- [x] daily `0 3 * * *`, tracking `0 */6 * * *` UTC와 다음 cron 시각이 설정됐는지 확인하고 deployment/run/domain/수치/로그 결과를 이 문서에 기록한다.
 
 ### 완료 조건
 
-- [ ] production API/web이 public domain에서 healthy/ready 상태다.
-- [ ] production daily와 tracking 초기 실행이 성공하고 새 DB connection에서도 snapshot, ranking, publication이 보존된다.
-- [ ] API/web의 MVP 주요 경로가 production data로 동작한다.
-- [ ] DB 무결성 오류와 secret 로그 노출이 모두 0이다.
-- [ ] UTC cron 설정, backup/PITR, rollback 대상과 장애 대응 경로가 확인됐다.
+- [x] production API/web이 public domain에서 healthy/ready 상태다.
+- [x] production daily와 tracking 초기 실행이 성공하고 새 DB connection에서도 snapshot, ranking, publication이 보존된다.
+- [x] API/web의 MVP 주요 경로가 production data로 동작한다.
+- [x] DB 무결성 오류와 secret 로그 노출이 모두 0이다.
+- [x] UTC cron 설정, backup/PITR, rollback 대상과 장애 대응 경로가 확인됐다.
 
 ### 테스트 방법
 
-- [ ] Railway plan/apply 및 API pre-deploy/build/deployment 로그를 확인한다.
-- [ ] `/health`, `/ready`, `/categories`, `/rankings`, repository detail/history와 web `/`를 실제 production domain에서 요청한다.
-- [ ] 새 production DB connection으로 run, item, snapshot, ranking, publication 및 네 무결성 query를 실행한다.
-- [ ] daily/tracking 전체 로그를 secret 실제값과 안전한 패턴으로 대조하고 failure event를 집계한다.
-- [ ] `railway status`에서 service 상태, cron schedule과 다음 실행 시각을 확인한다.
+- [x] Railway plan/apply 및 API pre-deploy/build/deployment 로그를 확인한다.
+- [x] `/health`, `/ready`, `/categories`, `/rankings`, repository detail/history와 web `/`를 실제 production domain에서 요청한다.
+- [x] 새 production DB connection으로 run, item, snapshot, ranking, publication 및 네 무결성 query를 실행한다.
+- [x] daily/tracking 전체 로그를 secret 실제값과 안전한 패턴으로 대조하고 failure event를 집계한다.
+- [x] `railway status`에서 service 상태, cron schedule과 다음 실행 시각을 확인한다.
 
 ### 중단 및 rollback 기준
 
@@ -840,7 +840,19 @@ npm run build
 
 ### 실행 기록
 
-- 시작 전. production apply, domain 생성, worker 실행은 아직 수행하지 않았다.
+- 2026-10-15: 00:00 UTC tracking slot 직후 `main == origin/main == 166eeca21f246dd1dc8f3b054fe1376ae9f57385`와 검증된 application/IaC 내용이 유지됨을 확인했다. Linux Node 24.21.0으로 IaC typecheck와 graph test 3개가 통과했다.
+- 2026-10-15: apply 직전 production environment `76f2d1f0-cb43-46c1-939c-8f2cf04fdb8d`가 빈 상태임을 확인하고, pinned plan을 다시 생성했다. 결과는 승인 내용과 정확히 같은 5 add / 0 change / 0 destroy였고 대상은 `Postgres`, `repovil-api`, `repovil-web`, `repovil-daily`, `repovil-tracking`뿐이었다. 해당 pinned plan을 production에 적용했다.
+- 2026-10-15: Postgres service와 volume이 `SUCCESS`/`RUNNING`/`READY`가 된 뒤 PITR를 활성화해 `enabled=true`, `bucketWired=true`를 확인했다. 그러나 daily/weekly/monthly backup schedule 설정은 Railway가 `Manual backups and backup schedules are only available for Pro workspaces`로 거부했고 schedule 목록은 비어 있었다. Hobby에서 승인된 backup 절차를 완료할 수 없어 worker 수동 실행을 중단했다.
+- 2026-10-15: apply된 변수 이름과 값 존재 여부만 검사했다. API/web에는 `GITHUB_TOKEN`이 없고 daily/tracking에만 non-empty token과 API version이 있으며 DB/API private reference도 존재해 secret 경계는 계획과 일치했다. Postgres, web, daily, tracking deployment는 성공했지만 API deployment `1b95b88d-cc19-4d56-9993-254876178bdd`의 pre-deploy Alembic 단계가 실패했다.
+- 2026-10-15: API 실패를 값 노출 없이 진단한 결과 production `PGPASSWORD`가 실제 난수가 아니라 미평가된 `secret(...)` 호출 문자열이며 `DATABASE_URL`도 같은 값을 포함해 Pydantic URL 검증에서 `invalid port number`로 거부됐다. staging password는 32자 영숫자 난수로 정상이다. production credential rotation과 URL 복구가 필요하다. domain 생성, health/API smoke, daily/tracking 수동 실행은 수행하지 않았으며 production data row는 아직 만들지 않았다.
+- 2026-10-15: production PostgreSQL credential을 실제 값 출력 없이 rotation하고 reference를 복구했다. API deployment `872beff8-d562-4cb5-b2c7-ad1b0d87eb3b`가 `SUCCESS`였으며 pre-deploy 로그에서 Alembic `20261011_0001`/`20261011_0002` upgrade와 6 categories / 21 topics / 21 active mappings sync를 확인했다. Postgres/API/web/daily/tracking 최신 deployment는 모두 `SUCCESS`이고 API/web 생성 domain은 각각 `https://repovil-api-production.up.railway.app`, `https://repovil-web-production.up.railway.app`이다.
+- 2026-10-15: Hobby plan 제약에 따라 사용자가 PITR-only와 scheduled backup이 Pro 전용인 예외를 승인했다. 최종 PITR 상태는 enabled, bucket wired, archiver enabled, backup set 1개이며 `2026-10-15 07:11:53 UTC`까지 live restore coverage를 확인했다. 별도 daily/weekly/monthly backup schedule은 승인된 예외대로 없다.
+- 2026-10-15: 수동 daily Cron Run `3f389b05-9b6b-4dbc-8cba-d032bc782543`는 `EXITED`; discovery run 1은 4,647 discovered / 4,647 added / failed range 0으로 `COMPLETED`, bootstrap은 4,647 completed / 0 failed였다. 이어 03:00 UTC scheduled daily Cron Run `a61a7af0-7935-4db8-a46f-d94b09df1412`도 `EXITED`; discovery run 2는 4,650 discovered / 3 added / failed range 0으로 `COMPLETED`, bootstrap은 4,650 completed / 0 failed였다. 새 DB 연결에서 active 4,649 / inactive 1 / bootstrap pending 0, bootstrap 원천 138,530행 / 4,650 repository를 확인했다.
+- 2026-10-15: 06:00 UTC scheduled tracking Cron Run `3dfd34a4-6f1a-4507-a59c-5af2623d10e4`를 중복 실행 없이 관찰했다. GitHub rate-limit reset 대기 후 Railway는 `EXITED`, DB run 1은 `COMPLETED`/published가 됐고 4,650 대상 중 4,649 success / 0 failed / 1 skipped / 0 pending, snapshot 4,649건, ranking 8,116건(7d 3,772 / 30d 4,344)이 보존됐다. 첫 실측 snapshot만 존재해 24h ranking 0건인 것은 PRD와 일치한다.
+- 2026-10-15: run 1의 success-without-snapshot, non-success-with-snapshot, orphan snapshot, pending item은 모두 0이었다. 모든 7d/30d ranking은 첫 run 특성상 bootstrap 추정치이고 `star_gain <= 0` row는 0건이었다.
+- 2026-10-15: production API `/health`, `/ready`, `/categories`(활성 6개), 24h/7d/30d ranking, `skills` category filter(7d 660건), page 2, repository detail와 star-history가 모두 HTTP 200이었다. 24h는 ready/0건, 7d는 3,772건, 30d는 4,344건으로 DB와 일치했고 page 1/2 중복은 0이었다. 표본 history는 actual 1점 / estimated 11점이었으며 web 7d ranking도 HTTP 200으로 API 최상위 repository를 렌더링했다.
+- 2026-10-15: scheduled daily 로그 14,157줄과 tracking 로그 13,955줄을 1분 이하 구간으로 나눠 상한 누락 없이 검사했다. failure event, 실제 GitHub token/DB credential 값, `GITHUB_TOKEN`/`DATABASE_URL`, `Authorization`/`Bearer`, token/DB URL 패턴, 로그 drop 경고는 모두 0건이었다.
+- 2026-10-15: cron은 daily `0 3 * * *`(다음 `2026-10-16 03:00 UTC`), tracking `0 */6 * * *`(다음 `2026-10-15 12:00 UTC`)로 확인했다. production API/web/Postgres는 `RUNNING`, daily/tracking은 성공 종료 후 `EXITED`였다. 검증 완료 후 Railway SSH key `repovil-phase16-temporary`, `repovil-phase16-temporary-recovery`와 추가 최종 검증 key를 모두 제거해 등록 key 0개를 확인했고 `/tmp/repovil-phase16.FANWiS`도 제거했다. 이로써 승인된 예외를 포함한 Phase 16 production 검증을 완료한다.
 
 ## 5. PRD 요구사항 추적표
 
